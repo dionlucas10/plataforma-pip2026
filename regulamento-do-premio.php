@@ -1,366 +1,69 @@
 <?php
-// regulamento-do-premio.php
-$page_title = 'Regulamento do Prêmio Impactos Positivos 2026';
+// /regulamento-do-premio.php
+declare(strict_types=1);
+
+$pageTitle = 'Regulamento do Prêmio Impactos Positivos 2026 | Impactos Positivos';
+
+include __DIR__ . '/app/views/public/header_public.php';
 ?>
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?= htmlspecialchars($page_title) ?> | Impactos Positivos</title>
-  <meta name="description" content="Leia o regulamento completo do Prêmio Impactos Positivos 2026. Critérios de participação, categorias, inscrição, votação, júri e premiação.">
 
-  <!-- Bootstrap 5 -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-  <!-- Bootstrap Icons -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <!-- Estilo do projeto -->
-  <link rel="stylesheet" href="/assets/css/style.css">
-
-  <style>
-    /* ── Regulamento — estilos exclusivos da página ── */
-    .reg-hero {
-      background: linear-gradient(135deg, #1E3425 0%, #2d5038 100%);
-      padding: 3.5rem 0 3rem;
-      position: relative;
-      overflow: hidden;
-      margin-left: calc(-50vw + 50%);
-      margin-right: calc(-50vw + 50%);
-      padding-left: calc(50vw - 50%);
-      padding-right: calc(50vw - 50%);
-    }
-    .reg-hero::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: url('/assets/images/background-02.png') no-repeat center/cover;
-      opacity: .06;
-      pointer-events: none;
-    }
-    .reg-hero .container { position: relative; z-index: 1; }
-    .reg-hero-title {
-      font-size: clamp(1.7rem, 3vw, 2.5rem);
-      font-weight: 800;
-      color: #fff;
-      line-height: 1.15;
-    }
-    .reg-hero-sub {
-      color: rgba(255,255,255,.75);
-      font-size: 1rem;
-      line-height: 1.75;
-      max-width: 600px;
-    }
-    .reg-update-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: .45rem;
-      background: rgba(205,222,0,.18);
-      color: #CDDE00;
-      border-radius: 999px;
-      padding: .35rem .9rem;
-      font-size: .8rem;
-      font-weight: 700;
-    }
-
-    /* Índice lateral / ToC */
-    .reg-toc {
-      position: sticky;
-      top: 1.5rem;
-      background: #fff;
-      border: 1px solid rgba(30,52,37,.08);
-      border-radius: 1.2rem;
-      padding: 1.25rem;
-      box-shadow: 0 8px 24px rgba(30,52,37,.06);
-    }
-    .reg-toc-title {
-      font-size: .9rem;
-      font-weight: 800;
-      color: #1E3425;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-      margin-bottom: .9rem;
-      padding-bottom: .65rem;
-      border-bottom: 2px solid #CDDE00;
-    }
-    .reg-toc-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: .2rem;
-    }
-    .reg-toc-list a {
-      display: block;
-      padding: .4rem .65rem;
-      border-radius: .5rem;
-      font-size: .85rem;
-      color: #4a5e4f;
-      text-decoration: none;
-      font-weight: 500;
-      transition: background .15s, color .15s;
-    }
-    .reg-toc-list a:hover {
-      background: #f0f4ed;
-      color: #1E3425;
-    }
-    .reg-toc-list .toc-num {
-      display: inline-block;
-      min-width: 1.5rem;
-      font-weight: 800;
-      color: #97A327;
-    }
-    .reg-toc-cta {
-      margin-top: 1.25rem;
-      padding-top: 1rem;
-      border-top: 1px solid rgba(30,52,37,.08);
-    }
-
-    /* Seções do regulamento */
-    .reg-section {
-      scroll-margin-top: 5rem;
-      padding-top: 2.5rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid rgba(30,52,37,.08);
-    }
-    .reg-section:last-of-type { border-bottom: 0; }
-    .reg-section-num {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      background: #CDDE00;
-      color: #1E3425;
-      font-weight: 800;
-      font-size: .88rem;
-      flex-shrink: 0;
-    }
-    .reg-section-title {
-      font-size: 1.3rem;
-      font-weight: 800;
-      color: #1E3425;
-    }
-    .reg-section p,
-    .reg-section li {
-      color: #3a4f3f;
-      font-size: .97rem;
-      line-height: 1.8;
-    }
-    .reg-section ul,
-    .reg-section ol {
-      padding-left: 1.35rem;
-    }
-    .reg-section ul li { list-style: disc; }
-    .reg-section ol > li { margin-bottom: .65rem; }
-
-    /* Artigos numerados */
-    .reg-article {
-      margin-bottom: .85rem;
-      padding: .9rem 1rem;
-      border-radius: .85rem;
-      background: #f8faf8;
-      border: 1px solid rgba(30,52,37,.06);
-    }
-    .reg-article-num {
-      display: inline-block;
-      font-weight: 800;
-      color: #97A327;
-      margin-right: .4rem;
-    }
-
-    /* Card de categoria */
-    .reg-categoria-card {
-      background: #fff;
-      border: 1px solid rgba(30,52,37,.09);
-      border-radius: 1rem;
-      padding: 1.25rem;
-      border-left: 4px solid #CDDE00;
-      transition: box-shadow .15s, transform .15s;
-    }
-    .reg-categoria-card:hover {
-      box-shadow: 0 10px 24px rgba(30,52,37,.09);
-      transform: translateY(-2px);
-    }
-    .reg-categoria-card h5 {
-      font-size: 1rem;
-      font-weight: 800;
-      color: #1E3425;
-      margin-bottom: .45rem;
-    }
-    .reg-categoria-card p {
-      font-size: .9rem;
-      color: #6c8070;
-      line-height: 1.6;
-      margin: 0;
-    }
-    .reg-categoria-card--destaque {
-      border-left-color: #97A327;
-      background: #f8fbef;
-    }
-
-    /* Fases de votação */
-    .reg-fase-card {
-      background: #fff;
-      border: 1px solid rgba(30,52,37,.09);
-      border-radius: 1.2rem;
-      padding: 1.5rem 1.25rem;
-      height: 100%;
-      position: relative;
-    }
-    .reg-fase-badge {
-      position: absolute;
-      top: -12px;
-      left: 1.25rem;
-      background: #1E3425;
-      color: #CDDE00;
-      border-radius: 999px;
-      padding: .25rem .85rem;
-      font-size: .75rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-    }
-    .reg-fase-periodo {
-      display: inline-flex;
-      align-items: center;
-      gap: .4rem;
-      background: #f0f4ed;
-      color: #1E3425;
-      border-radius: 999px;
-      padding: .3rem .8rem;
-      font-size: .8rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
-    }
-
-    /* Alerta de atenção */
-    .reg-alert-atencao {
-      background: #fff3cd;
-      border-left: 4px solid #ffc107;
-      border-radius: .75rem;
-      padding: 1rem 1.1rem;
-      color: #664d03;
-    }
-
-    /* Board de conselheiros */
-    .reg-board-card {
-      background: #fff;
-      border: 1px solid rgba(30,52,37,.08);
-      border-radius: 1rem;
-      padding: 1.1rem 1.25rem;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      transition: box-shadow .15s;
-    }
-    .reg-board-card:hover {
-      box-shadow: 0 8px 20px rgba(30,52,37,.08);
-    }
-    .reg-board-avatar {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: #1E3425;
-      color: #CDDE00;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-      font-size: 1.05rem;
-      flex-shrink: 0;
-    }
-    .reg-board-name {
-      font-weight: 700;
-      color: #1E3425;
-      font-size: .95rem;
-      line-height: 1.25;
-    }
-    .reg-board-role {
-      font-size: .82rem;
-      color: #97A327;
-      font-weight: 600;
-    }
-
-    /* Box promotora */
-    .reg-promotora-box {
-      background: #f5f7f2;
-      border: 1px solid rgba(30,52,37,.1);
-      border-radius: 1.2rem;
-      padding: 1.5rem;
-    }
-
-    /* Link externo discreto */
-    .reg-ext-link {
-      color: #5a8a62;
-      font-weight: 600;
-      text-decoration: none;
-      word-break: break-all;
-    }
-    .reg-ext-link:hover { color: #1E3425; text-decoration: underline; }
-
-    @media (max-width: 991.98px) {
-      .reg-toc { position: static; margin-bottom: 2rem; }
-    }
-    @media (max-width: 767.98px) {
-      .reg-hero { padding-top: 2.5rem; padding-bottom: 2rem; }
-      .reg-fase-card { margin-top: 1.25rem; }
-    }
-  </style>
-</head>
-<body>
-
-  <?php include __DIR__ . '/includes/header.php'; ?>
-
-  <!-- HERO -->
-  <section class="reg-hero">
-    <div class="container">
-      <div class="row align-items-center g-4">
-        <div class="col-lg-8">
-          <span class="reg-update-badge mb-3 d-inline-flex">
-            <i class="bi bi-patch-check-fill"></i>
-            Última atualização: 31 de março de 2026
-          </span>
-          <h1 class="reg-hero-title mb-3">
-            Regulamento<br>
-            <span style="color:#CDDE00;">Prêmio Impactos Positivos 2026</span>
-          </h1>
-          <p class="reg-hero-sub mb-4">
-            Leia com atenção todas as regras, critérios e disposições antes de realizar sua inscrição ou votação.
-          </p>
-          <a href="https://vitrine.impactospositivos.com" target="_blank" rel="noopener" class="btn-premiacao-primary me-2 mb-2">
+<!-- ═══════════════════════════════════════
+     HERO — REGULAMENTO
+════════════════════════════════════════ -->
+<section class="reg-hero">
+  <div class="container">
+    <div class="row align-items-center g-4">
+      <div class="col-lg-8">
+        <span class="reg-update-badge mb-3 d-inline-flex">
+          <i class="bi bi-patch-check-fill me-1"></i>
+          Última atualização: 31 de março de 2026
+        </span>
+        <h1 class="reg-hero-title mb-3">
+          Regulamento<br>
+          <span style="color:#CDDE00;">Prêmio Impactos Positivos 2026</span>
+        </h1>
+        <p class="reg-hero-sub mb-4">
+          Leia com atenção todas as regras, critérios e disposições antes de realizar sua inscrição ou votação.
+        </p>
+        <div class="d-flex flex-wrap gap-2">
+          <a href="https://vitrine.impactospositivos.com" target="_blank" rel="noopener" class="btn-premiacao-primary">
             <i class="bi bi-pencil-square me-2"></i> Inscreva-se agora
           </a>
-          <a href="#sec-participacao" class="btn-premiacao-outline mb-2">
+          <a href="#sec-participacao" class="btn-premiacao-outline">
             <i class="bi bi-file-text me-2"></i> Ver regulamento
           </a>
         </div>
-        <div class="col-lg-4 text-lg-end">
-          <div class="d-inline-flex flex-column gap-2 text-start">
-            <div class="d-flex align-items-center gap-2" style="color:rgba(255,255,255,.8);font-size:.9rem;">
-              <i class="bi bi-calendar3" style="color:#CDDE00;"></i>
-              Inscrições: <strong class="ms-1" style="color:#fff;">11/05 a 24/07/2026</strong>
-            </div>
-            <div class="d-flex align-items-center gap-2" style="color:rgba(255,255,255,.8);font-size:.9rem;">
-              <i class="bi bi-trophy" style="color:#CDDE00;"></i>
-              Premiação: <strong class="ms-1" style="color:#fff;">24 de setembro de 2026</strong>
-            </div>
-            <div class="d-flex align-items-center gap-2" style="color:rgba(255,255,255,.8);font-size:.9rem;">
-              <i class="bi bi-grid-3x2-gap" style="color:#CDDE00;"></i>
-              4 categorias disponíveis
-            </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="d-flex flex-column gap-2">
+          <div class="reg-hero-info-item">
+            <i class="bi bi-calendar3" style="color:#CDDE00;"></i>
+            Inscrições: <strong>11/05 a 24/07/2026</strong>
+          </div>
+          <div class="reg-hero-info-item">
+            <i class="bi bi-trophy" style="color:#CDDE00;"></i>
+            Premiação: <strong>24 de setembro de 2026</strong>
+          </div>
+          <div class="reg-hero-info-item">
+            <i class="bi bi-grid-3x2-gap" style="color:#CDDE00;"></i>
+            4 categorias disponíveis
           </div>
         </div>
       </div>
     </div>
-  </section>
-  <!-- /HERO -->
+  </div>
+</section>
+<!-- /HERO -->
 
-  <main class="container py-5">
+
+<!-- ═══════════════════════════════════════
+     CONTEÚDO PRINCIPAL
+════════════════════════════════════════ -->
+<section class="py-5">
+  <div class="container">
     <div class="row g-5">
 
-      <!-- ── ÍNDICE (sidebar) ── -->
+      <!-- ── Índice lateral -->
       <aside class="col-lg-3 d-none d-lg-block">
         <nav class="reg-toc" aria-label="Índice do regulamento">
           <div class="reg-toc-title"><i class="bi bi-list-ul me-1"></i> Índice</div>
@@ -387,20 +90,20 @@ $page_title = 'Regulamento do Prêmio Impactos Positivos 2026';
         </nav>
       </aside>
 
-      <!-- ── CONTEÚDO ── -->
+      <!-- ── Conteúdo -->
       <div class="col-lg-9">
 
         <!-- Objetivo -->
         <section id="sec-objetivo" class="reg-section">
           <div class="d-flex align-items-start gap-3 mb-3">
-            <span class="reg-section-num" style="background:#CDDE00;color:#1E3425;"><i class="bi bi-star-fill" style="font-size:.85rem;"></i></span>
+            <span class="reg-section-num" style="background:#CDDE00;color:#1E3425;">
+              <i class="bi bi-star-fill" style="font-size:.85rem;"></i>
+            </span>
             <h2 class="reg-section-title mb-0">Objetivo &amp; Princípios</h2>
           </div>
-
           <p>
             O <strong>Prêmio Impactos Positivos 2026</strong> tem como objetivo celebrar e mostrar para o mundo os incríveis negócios de impacto, ecossistemas de impacto, cidadãos de impacto, instituições de impacto e comunicadores de impacto que temos em nosso país, os quais deveriam receber mais destaque e reconhecimento que merecem.
           </p>
-
           <p>Estes são os nossos princípios:</p>
           <div class="row g-2 mb-3">
             <?php
@@ -408,13 +111,12 @@ $page_title = 'Regulamento do Prêmio Impactos Positivos 2026';
             foreach ($principios as $p): ?>
               <div class="col-6 col-sm-4">
                 <div class="principio-chip text-center py-2 px-3 d-flex align-items-center justify-content-center gap-2">
-                  <i class="bi bi-check-circle-fill text-success" style="font-size:.9rem;"></i>
-                  <?= $p ?>
+                  <i class="bi bi-check-circle-fill" style="color:#97A327;font-size:.9rem;"></i>
+                  <?= htmlspecialchars($p) ?>
                 </div>
               </div>
             <?php endforeach; ?>
           </div>
-
           <p>
             Por isso, toda e qualquer iniciativa do Prêmio é em prol de um mundo onde negócios e pessoas inspiradoras possam ser cada vez mais enaltecidas e divulgadas.
           </p>
@@ -426,7 +128,9 @@ $page_title = 'Regulamento do Prêmio Impactos Positivos 2026';
         <!-- Board -->
         <section id="sec-board" class="reg-section">
           <div class="d-flex align-items-start gap-3 mb-3">
-            <span class="reg-section-num" style="background:#95BCCC;color:#1E3425;"><i class="bi bi-people-fill" style="font-size:.85rem;"></i></span>
+            <span class="reg-section-num" style="background:#95BCCC;color:#1E3425;">
+              <i class="bi bi-people-fill" style="font-size:.85rem;"></i>
+            </span>
             <h2 class="reg-section-title mb-0">Quem está trabalhando junto na edição 2026?</h2>
           </div>
           <p>
@@ -435,10 +139,10 @@ $page_title = 'Regulamento do Prêmio Impactos Positivos 2026';
           <div class="row g-3">
             <?php
             $board = [
-              ['Alexandre Uehara',  'Board de Inovação e Tecnologia',      'A'],
-              ['Gisele Abrahão',    'Board de Estratégia e Comunicação',   'G'],
-              ['Eduardo Nunes',     'Board de Governança ESG',             'E'],
-              ['Roberta Coutinho',  'Board de Finanças Sustentáveis',      'R'],
+              ['Alexandre Uehara',  'Board de Inovação e Tecnologia',    'A'],
+              ['Gisele Abrahão',    'Board de Estratégia e Comunicação', 'G'],
+              ['Eduardo Nunes',     'Board de Governança ESG',           'E'],
+              ['Roberta Coutinho',  'Board de Finanças Sustentáveis',    'R'],
             ];
             foreach ($board as [$nome, $area, $ini]): ?>
               <div class="col-md-6">
@@ -506,7 +210,7 @@ $page_title = 'Regulamento do Prêmio Impactos Positivos 2026';
             <div class="col-md-6">
               <div class="reg-categoria-card reg-categoria-card--destaque">
                 <h5><i class="bi bi-diagram-3 me-2" style="color:#97A327;"></i>Dinamizador do Ecossistema</h5>
-                <p>Organizações que fomentam o ecossistema de impacto: institutos, fundações, empresas, aceleradoras, incubadoras, academias, universidades, centros de pesquisa, laboratórios, empresas juniores, instituições tecnológicas, consultorias, certificadoras, mentores, assessores jurídicos e financeiros, ONGs, movimentos sociais, entre outros.</p>
+                <p>Organizações que fomentam o ecossistema de impacto: institutos, fundações, empresas, aceleradoras, incubadoras, academias, universidades, centros de pesquisa, laboratórios, consultorias, certificadoras, mentores, ONGs, movimentos sociais, entre outros.</p>
               </div>
             </div>
           </div>
@@ -524,20 +228,18 @@ $page_title = 'Regulamento do Prêmio Impactos Positivos 2026';
             <span class="reg-section-num">3</span>
             <h2 class="reg-section-title mb-0">Inscrição</h2>
           </div>
-
-          <div class="reg-article"><span class="reg-article-num">3.1</span> As inscrições para o Prêmio Impactos Positivos 2026 podem ser realizadas em todo território nacional, por pessoas jurídicas, nos termos do item 1 deste regulamento.</div>
+          <div class="reg-article"><span class="reg-article-num">3.1</span> As inscrições podem ser realizadas em todo território nacional, por pessoas jurídicas, nos termos do item 1 deste regulamento.</div>
           <div class="reg-article">
             <span class="reg-article-num">3.2</span>
-            As inscrições podem ser realizadas no período de <strong>11/05/2026 a 24/07/2026 às 23h59</strong> por meio da plataforma
+            Período de inscrições: <strong>11/05/2026 a 24/07/2026 às 23h59</strong>, por meio da plataforma
             <a href="https://vitrine.impactospositivos.com" target="_blank" rel="noopener" class="reg-ext-link">vitrine.impactospositivos.com</a>.
           </div>
-          <div class="reg-article"><span class="reg-article-num">3.3</span> O Cadastro foi desenvolvido em parceria com o Sebrae Nacional, Enimpacto, CADImpacto — plataforma do Ministério do Desenvolvimento, Indústria, Comércio e Serviços (MDIC). As informações cedidas serão utilizadas para os critérios de avaliação e seleção de inscritos pelo júri e pela Bancada Técnica. Além dos dados da pessoa jurídica, serão solicitados os seguintes dados pessoais do responsável: nome completo, CPF, data de nascimento, e-mail, telefone, gênero, formação acadêmica e endereço completo.</div>
-          <div class="reg-article"><span class="reg-article-num">3.4</span> As informações pessoais fornecidas no ato da inscrição serão utilizadas para atender a sua solicitação e, se necessário, poderão ser compartilhadas com terceiros conforme a política do usuário.</div>
+          <div class="reg-article"><span class="reg-article-num">3.3</span> O Cadastro foi desenvolvido em parceria com o Sebrae Nacional, Enimpacto e CADImpacto — plataforma do Ministério do Desenvolvimento, Indústria, Comércio e Serviços (MDIC). Além dos dados da pessoa jurídica, serão solicitados dados pessoais do responsável: nome completo, CPF, data de nascimento, e-mail, telefone, gênero, formação acadêmica e endereço completo.</div>
+          <div class="reg-article"><span class="reg-article-num">3.4</span> As informações pessoais fornecidas serão utilizadas para atender a sua solicitação e poderão ser compartilhadas com terceiros conforme a política do usuário.</div>
           <div class="reg-article"><span class="reg-article-num">3.5</span> Todos os inscritos são responsáveis pelas informações adicionadas em seus formulários e garantem que elas são verdadeiras e atualizadas.</div>
-          <div class="reg-article"><span class="reg-article-num">3.6</span> Somente serão aceitas inscrições de empresas que não possuam registros de impactos negativos ambientais, sociais e de governança.</div>
+          <div class="reg-article"><span class="reg-article-num">3.6</span> Somente serão aceitas inscrições de empresas sem registros de impactos negativos ambientais, sociais e de governança.</div>
           <div class="reg-article">
-            <span class="reg-article-num">3.7</span>
-            Para confirmar a efetividade da inscrição, serão realizadas pesquisas sobre possíveis impactos negativos em sites de acesso público:
+            <span class="reg-article-num">3.7</span> Para confirmar a inscrição, serão realizadas pesquisas em sites públicos:
             <ul class="mt-2">
               <li><a href="https://www.tst.jus.br/certidao1" target="_blank" rel="noopener" class="reg-ext-link">tst.jus.br/certidao1</a> — certidão negativa de débitos trabalhistas.</li>
               <li><a href="https://servicos.ibama.gov.br/sicafiext/sistema.php" target="_blank" rel="noopener" class="reg-ext-link">servicos.ibama.gov.br</a> — certidão negativa de multas ambientais.</li>
@@ -546,14 +248,14 @@ $page_title = 'Regulamento do Prêmio Impactos Positivos 2026';
           </div>
           <div class="reg-article"><span class="reg-article-num">3.8</span> Outras informações que atestem impactos negativos poderão ser pesquisadas em fontes seguras e públicas, incluindo decisões judiciais.</div>
           <div class="reg-article"><span class="reg-article-num">3.9</span> Será solicitado 1 (um) vídeo e 5 (cinco) fotos do negócio no momento do cadastro, que poderão ser utilizados para divulgação no site e redes sociais do prêmio.</div>
-          <div class="reg-article"><span class="reg-article-num">3.10</span> Não serão válidas as participações recebidas após 24/07/2026. Serão desclassificadas as inscrições incompletas, incorretas ou em desconformidade com este regulamento.</div>
-          <div class="reg-article"><span class="reg-article-num">3.11</span> Os projetos inscritos devem estar diretamente relacionados às atividades comerciais registradas no CNPJ fornecido. Não serão aceitas inscrições com inconsistências entre o tipo de projeto e o cadastro do CNPJ.</div>
-          <div class="reg-article"><span class="reg-article-num">3.12</span> Serão desclassificadas as inscrições que apresentem qualquer prática de atos ilegais, afronta à moral e aos bons costumes ou violação de legislação vigente.</div>
-          <div class="reg-article"><span class="reg-article-num">3.13</span> Para participar deste prêmio, realizado nos termos da <strong>Lei nº 5.768/71</strong>, não é necessária a compra de qualquer bem, direito ou serviço da empresa promotora ou de terceiros.</div>
+          <div class="reg-article"><span class="reg-article-num">3.10</span> Não serão válidas as participações recebidas após 24/07/2026. Inscrições incompletas, incorretas ou em desconformidade com este regulamento serão desclassificadas.</div>
+          <div class="reg-article"><span class="reg-article-num">3.11</span> Os projetos inscritos devem estar diretamente relacionados às atividades comerciais registradas no CNPJ fornecido.</div>
+          <div class="reg-article"><span class="reg-article-num">3.12</span> Serão desclassificadas as inscrições que apresentem qualquer prática de atos ilegais ou violação de legislação vigente.</div>
+          <div class="reg-article"><span class="reg-article-num">3.13</span> Para participar deste prêmio, realizado nos termos da <strong>Lei nº 5.768/71</strong>, não é necessária a compra de qualquer bem, direito ou serviço.</div>
           <div class="reg-article"><span class="reg-article-num">3.14</span> A apuração do vencedor não está sujeita a qualquer tipo de sorteio ou operação assemelhada.</div>
         </section>
 
-        <!-- 4. Critérios de Avaliação -->
+        <!-- 4. Critérios -->
         <section id="sec-criterios" class="reg-section">
           <div class="d-flex align-items-start gap-3 mb-3">
             <span class="reg-section-num">4</span>
@@ -565,12 +267,12 @@ $page_title = 'Regulamento do Prêmio Impactos Positivos 2026';
           <div class="row g-3 mb-3">
             <?php
             $criterios = [
-              ['bi-heart-pulse','Valores','A necessidade do negócio e o impacto que ele traz para a sociedade.'],
-              ['bi-hand-thumbs-up','Facilidade','Facilidade de informações, de acesso e de engajamento.'],
-              ['bi-speedometer2','Produtividade','Qualidade, sustentabilidade, economia de tempo e redução de custos.'],
-              ['bi-tree','Impacto Ambiental','Benefícios ao meio ambiente, proteção e/ou recuperação da natureza.'],
-              ['bi-people','Impacto Social','Como ajuda a resolver vulnerabilidade social, educação, saúde, segurança ou qualidade de vida.'],
-              ['bi-coin','Impacto Econômico','Benefícios à comunidade, geração de empregos e rentabilidade adicional.'],
+              ['bi-heart-pulse',    'Valores',           'A necessidade do negócio e o impacto que ele traz para a sociedade.'],
+              ['bi-hand-thumbs-up', 'Facilidade',        'Facilidade de informações, de acesso e de engajamento.'],
+              ['bi-speedometer2',   'Produtividade',     'Qualidade, sustentabilidade, economia de tempo e redução de custos.'],
+              ['bi-tree',           'Impacto Ambiental', 'Benefícios ao meio ambiente, proteção e/ou recuperação da natureza.'],
+              ['bi-people',         'Impacto Social',    'Como ajuda a resolver vulnerabilidade social, educação, saúde ou qualidade de vida.'],
+              ['bi-coin',           'Impacto Econômico', 'Benefícios à comunidade, geração de empregos e rentabilidade adicional.'],
             ];
             foreach ($criterios as [$icon, $titulo, $desc]): ?>
               <div class="col-md-6">
@@ -584,8 +286,7 @@ $page_title = 'Regulamento do Prêmio Impactos Positivos 2026';
           </div>
           <div class="reg-article"><span class="reg-article-num">4.2</span> Os critérios acima poderão ser atualizados durante o período das inscrições.</div>
           <div class="reg-article">
-            <span class="reg-article-num">4.3</span>
-            <strong>Bancada Técnica de Avaliação</strong> — Para garantir uma análise criteriosa e embasada, será instituída uma Bancada Técnica composta por profissionais qualificados nas áreas de impacto social, ambiental e inovação. Essa bancada avaliará os projetos com base nas qualificações apresentadas e, junto com a votação aberta, selecionará os projetos que avançarão nas fases. Os integrantes serão apresentados antes do período de votação, assegurando transparência e credibilidade.
+            <span class="reg-article-num">4.3</span> <strong>Bancada Técnica de Avaliação</strong> — composta por profissionais qualificados nas áreas de impacto social, ambiental e inovação. Avaliará os projetos com base nas qualificações apresentadas e, junto com a votação aberta, selecionará os que avançarão nas fases. Os integrantes serão apresentados antes do período de votação.
           </div>
         </section>
 
@@ -597,65 +298,46 @@ $page_title = 'Regulamento do Prêmio Impactos Positivos 2026';
           </div>
           <p>A classificação dos negócios inscritos será realizada por meio de <strong>3 fases</strong>:</p>
 
-          <!-- Fases -->
           <div class="row g-4 mb-4 mt-1">
-            <!-- Fase 1 -->
             <div class="col-md-4">
               <div class="reg-fase-card">
                 <span class="reg-fase-badge">Fase 1</span>
                 <div class="reg-fase-periodo mt-3">
                   <i class="bi bi-calendar3"></i> 30/07 a 14/08/2026
                 </div>
-                <p class="mb-2" style="font-size:.9rem;color:#3a4f3f;line-height:1.6;">
-                  Votação aberta ao público em <a href="https://www.impactospositivos.com" target="_blank" rel="noopener" class="reg-ext-link">impactospositivos.com</a>. Cada usuário cadastrado pode votar <strong>1 vez por negócio</strong>, em quantos negócios quiser.
-                </p>
-                <p style="font-size:.9rem;color:#3a4f3f;line-height:1.6;">
-                  Resultado: <strong>TOP 20</strong> por categoria (10 mais votados pelo público + 10 selecionados pela Bancada Técnica), totalizando <strong>80 negócios</strong>.
-                </p>
+                <p class="mb-2">Votação aberta ao público em <a href="https://www.impactospositivos.com" target="_blank" rel="noopener" class="reg-ext-link">impactospositivos.com</a>. 1 voto por negócio, podendo votar em vários.</p>
+                <p>Resultado: <strong>TOP 20</strong> por categoria (10 mais votados + 10 da Bancada Técnica), totalizando <strong>80 negócios</strong>.</p>
               </div>
             </div>
-            <!-- Fase 2 -->
             <div class="col-md-4">
               <div class="reg-fase-card">
                 <span class="reg-fase-badge">Fase 2</span>
                 <div class="reg-fase-periodo mt-3">
                   <i class="bi bi-calendar3"></i> 24/08 a 04/09/2026
                 </div>
-                <p class="mb-2" style="font-size:.9rem;color:#3a4f3f;line-height:1.6;">
-                  Segunda votação aberta ao público na mesma plataforma, restrita aos <strong>TOP 20</strong> de cada categoria.
-                </p>
-                <p style="font-size:.9rem;color:#3a4f3f;line-height:1.6;">
-                  Resultado: <strong>TOP 6</strong> por categoria (3 mais votados pelo público + 3 selecionados pela Bancada), totalizando <strong>24 finalistas</strong>.
-                </p>
+                <p class="mb-2">Segunda votação aberta, restrita aos <strong>TOP 20</strong> de cada categoria.</p>
+                <p>Resultado: <strong>TOP 6</strong> por categoria (3 mais votados + 3 da Bancada), totalizando <strong>24 finalistas</strong>.</p>
               </div>
             </div>
-            <!-- Fase 3 -->
             <div class="col-md-4">
-              <div class="reg-fase-card" style="border-color:rgba(205,222,0,.4);background:#f9fce8;">
-                <span class="reg-fase-badge" style="background:#CDDE00;color:#1E3425;">Fase 3 — Final</span>
+              <div class="reg-fase-card reg-fase-card--final">
+                <span class="reg-fase-badge reg-fase-badge--final">Fase 3 — Final</span>
                 <div class="reg-fase-periodo mt-3">
                   <i class="bi bi-calendar3"></i> 07/09 a 18/09/2026
                 </div>
-                <p class="mb-2" style="font-size:.9rem;color:#3a4f3f;line-height:1.6;">
-                  Votação para os <strong>TOP 6 finalistas</strong> por categoria. Cada finalista recebe 1 ponto de cada categoria de jurados (4 jurados) + votos acumulados do público (1 ponto).
-                </p>
-                <p style="font-size:.9rem;color:#3a4f3f;line-height:1.6;">
-                  Cerimônia de encerramento: <strong>24 de setembro de 2026</strong>, formato híbrido, com transmissão online em <a href="https://www.impactospositivos.com" target="_blank" rel="noopener" class="reg-ext-link">impactospositivos.com</a>.
-                </p>
+                <p class="mb-2">Votação para os <strong>TOP 6 finalistas</strong>. Cada finalista recebe 1 ponto por categoria de jurado (4 pontos) + 1 ponto do público.</p>
+                <p>Cerimônia: <strong>24/09/2026</strong>, formato híbrido, com transmissão em <a href="https://www.impactospositivos.com" target="_blank" rel="noopener" class="reg-ext-link">impactospositivos.com</a>.</p>
               </div>
             </div>
           </div>
 
-          <!-- 5.4 Lisura -->
-          <h4 class="fw-800 mb-3" style="font-size:1.05rem;color:#1E3425;" id="sec-lisura">5.4 Da lisura das votações e critério de desclassificação</h4>
-          <div class="reg-article"><span class="reg-article-num"></span>A votação aberta ao público é elemento essencial do Prêmio. Fica <strong>vedado o uso de meios automatizados</strong> (robôs ou similares) para inflar votos de qualquer competidor.</div>
-          <div class="reg-article">Caso identificado o uso de robôs ou mecanismos semelhantes, a organização irá: <strong>(a)</strong> comunicar formalmente o inscrito; <strong>(b)</strong> retirar os votos irregulares; <strong>(c)</strong> em caso de reincidência, desclassificar o competidor.</div>
-          <div class="reg-article">Também não serão aceitos e-mails secundários criados artificialmente a partir de um mesmo endereço original, endereços com formato incorreto, temporários, falsos ou não verificáveis.</div>
-          <div class="reg-article">A organização poderá realizar auditorias e análises de dados para garantir a integridade do processo de votação.</div>
+          <h4 class="reg-subsection-title" id="sec-lisura">5.4 Da lisura das votações</h4>
+          <div class="reg-article">Fica <strong>vedado o uso de meios automatizados</strong> (robôs ou similares) para inflar votos. Em caso de identificação, a organização comunicará o inscrito, retirará os votos irregulares e, em caso de reincidência, desclassificará o competidor.</div>
+          <div class="reg-article">Não serão aceitos e-mails secundários criados artificialmente, temporários, falsos, não verificáveis ou que impeçam o contato direto com o votante.</div>
+          <div class="reg-article">A organização poderá realizar auditorias e análises para garantir a integridade do processo.</div>
 
-          <!-- 5.5 Substituição -->
-          <h4 class="fw-800 mt-3 mb-3" style="font-size:1.05rem;color:#1E3425;">5.5 Substituição em Caso de Desclassificação</h4>
-          <div class="reg-article">No caso de desclassificação durante a votação, o projeto subsequente com maior quantidade de votos será automaticamente classificado para assumir a posição do desclassificado, de forma imediata.</div>
+          <h4 class="reg-subsection-title">5.5 Substituição em caso de desclassificação</h4>
+          <div class="reg-article">No caso de desclassificação durante a votação, o projeto subsequente com maior quantidade de votos será automaticamente classificado para assumir a posição, de forma imediata.</div>
         </section>
 
         <!-- 6. Júri -->
@@ -664,13 +346,10 @@ $page_title = 'Regulamento do Prêmio Impactos Positivos 2026';
             <span class="reg-section-num">6</span>
             <h2 class="reg-section-title mb-0">Júri da Premiação</h2>
           </div>
-          <div class="reg-article"><span class="reg-article-num">6.1</span> O Prêmio Impactos Positivos 2026 contará com um júri de especialistas composto por Membros do Board do Impactos Positivos e representantes de empresas de impacto do ecossistema brasileiro, anunciados pelos meios de comunicação oficiais.</div>
-          <div class="reg-article"><span class="reg-article-num">6.2</span> O time de jurados poderá ser alterado e/ou atualizado durante todo o período da premiação, sendo responsabilidade da organização sua divulgação oficial para garantir transparência até 18/09/2026.</div>
-          <div class="reg-article"><span class="reg-article-num">6.3</span> Cada membro do Júri votará em 1 (um) negócio finalista por categoria. O negócio mais votado pela sociedade civil recebe 1 (um) ponto adicional. No total, cada categoria tem até <strong>5 pontos</strong>: 4 do Júri + 1 do público.</div>
-          <div class="reg-article">
-            <span class="reg-article-num">6.4</span>
-            <strong>Sistema de pontuação:</strong> O negócio com maior pontuação combinada — 4 pontos do Júri + 1 ponto do público (para o mais votado) — será declarado vencedor da respectiva categoria.
-          </div>
+          <div class="reg-article"><span class="reg-article-num">6.1</span> O júri será composto por Membros do Board do Impactos Positivos e representantes de empresas de impacto do ecossistema brasileiro, anunciados pelos meios oficiais.</div>
+          <div class="reg-article"><span class="reg-article-num">6.2</span> O time poderá ser alterado durante todo o período da premiação, com divulgação oficial até 18/09/2026.</div>
+          <div class="reg-article"><span class="reg-article-num">6.3</span> Cada membro votará em 1 (um) negócio finalista por categoria. O negócio mais votado pelo público recebe 1 (um) ponto adicional. Total por categoria: até <strong>5 pontos</strong> (4 do Júri + 1 do público).</div>
+          <div class="reg-article"><span class="reg-article-num">6.4</span> O negócio com maior pontuação combinada será declarado vencedor da respectiva categoria.</div>
         </section>
 
         <!-- 7. Premiação -->
@@ -679,10 +358,10 @@ $page_title = 'Regulamento do Prêmio Impactos Positivos 2026';
             <span class="reg-section-num">7</span>
             <h2 class="reg-section-title mb-0">Premiação</h2>
           </div>
-          <div class="reg-article"><span class="reg-article-num">7.1</span> O maior prêmio destinado aos vencedores será toda a exposição, engajamento e visibilidade gerada pelo Impactos Positivos 2026.</div>
-          <div class="reg-article"><span class="reg-article-num">7.2</span> O projeto conta com apoiadores comprometidos em usar suas plataformas e redes sociais para promover os projetos ganhadores de cada categoria.</div>
+          <div class="reg-article"><span class="reg-article-num">7.1</span> O maior prêmio será toda a exposição, engajamento e visibilidade gerada pelo Impactos Positivos 2026.</div>
+          <div class="reg-article"><span class="reg-article-num">7.2</span> Apoiadores estarão comprometidos em usar suas plataformas e redes sociais para promover os projetos ganhadores de cada categoria.</div>
           <div class="reg-article">
-            <span class="reg-article-num">7.3</span> Os vencedores das categorias receberão:
+            <span class="reg-article-num">7.3</span> Os vencedores de cada categoria receberão:
             <ul class="mt-2">
               <li>Troféu Prêmio Impactos Positivos 2026.</li>
               <li>As demais premiações serão divulgadas antes do início da primeira fase.</li>
@@ -691,8 +370,8 @@ $page_title = 'Regulamento do Prêmio Impactos Positivos 2026';
           <div class="reg-article"><span class="reg-article-num">7.4</span> Outras premiações poderão ser inseridas neste regulamento até a data final de inscrição.</div>
           <div class="reg-article"><span class="reg-article-num">7.5</span> Os vencedores terão seus nomes divulgados no site do Prêmio e nas redes sociais da Plataforma Impactos Positivos.</div>
           <div class="reg-article"><span class="reg-article-num">7.6</span> Os participantes autorizam a divulgação de seu nome, imagem e voz no site do prêmio em caso de serem eleitos entre os mais votados.</div>
-          <div class="reg-article"><span class="reg-article-num">7.7</span> O prêmio só será atribuído após a verificação do cumprimento de todas as regras deste regulamento. Em caso de desclassificação ou não aceitação, o participante colocado a seguir assumirá a posição.</div>
-          <div class="reg-article"><span class="reg-article-num">7.8</span> O prêmio não poderá em hipótese alguma ser convertido em dinheiro, tampouco ser trocado por qualquer outro prêmio, produto ou serviço.</div>
+          <div class="reg-article"><span class="reg-article-num">7.7</span> O prêmio só será atribuído após verificação do cumprimento de todas as regras. Em caso de desclassificação ou não aceitação, o participante seguinte assumirá a posição.</div>
+          <div class="reg-article"><span class="reg-article-num">7.8</span> O prêmio não poderá em hipótese alguma ser convertido em dinheiro, tampouco trocado por qualquer outro prêmio, produto ou serviço.</div>
         </section>
 
         <!-- 8. Entrega -->
@@ -701,68 +380,69 @@ $page_title = 'Regulamento do Prêmio Impactos Positivos 2026';
             <span class="reg-section-num">8</span>
             <h2 class="reg-section-title mb-0">Entrega dos Prêmios</h2>
           </div>
-          <div class="reg-article"><span class="reg-article-num">8.1</span> Os vencedores receberão um voucher com os contatos das consultorias e assessorias apoiadoras para contato e agendamento.</div>
-          <div class="reg-article"><span class="reg-article-num">8.2</span> O prêmio será disponibilizado ao ganhador no prazo de até 20 (vinte) dias da data da divulgação, sem ônus, devendo o ganhador enviar a documentação necessária.</div>
-          <div class="reg-article"><span class="reg-article-num">8.3</span> Todos os prêmios são de uso exclusivo do ganhador inscrito, sendo pessoais e intransferíveis.</div>
-          <div class="reg-article"><span class="reg-article-num">8.4</span> É responsabilidade do negócio ganhador o contato e agendamento dos benefícios junto às empresas apoiadoras. A plataforma estará disponível para auxiliar, mas não realizará o agendamento.</div>
+          <div class="reg-article"><span class="reg-article-num">8.1</span> Os vencedores receberão um voucher com os contatos das consultorias e assessorias apoiadoras para agendamento.</div>
+          <div class="reg-article"><span class="reg-article-num">8.2</span> O prêmio será disponibilizado em até 20 (vinte) dias da data da divulgação, sem ônus, devendo o ganhador enviar a documentação necessária.</div>
+          <div class="reg-article"><span class="reg-article-num">8.3</span> Todos os prêmios são pessoais e intransferíveis, de uso exclusivo do ganhador inscrito.</div>
+          <div class="reg-article"><span class="reg-article-num">8.4</span> É responsabilidade do negócio ganhador o contato e agendamento dos benefícios junto às empresas apoiadoras.</div>
         </section>
 
-        <!-- 9. Disposições Gerais -->
+        <!-- 9. Geral -->
         <section id="sec-geral" class="reg-section">
           <div class="d-flex align-items-start gap-3 mb-3">
             <span class="reg-section-num">9</span>
             <h2 class="reg-section-title mb-0">Disposições Gerais</h2>
           </div>
-          <div class="reg-article"><span class="reg-article-num">9.1</span> Para viabilizar o projeto, contaremos com a participação de apoiadores voluntários, sem qualquer relação contratual com o Projeto Impactos Positivos.</div>
-          <div class="reg-article"><span class="reg-article-num">9.2</span> É importante que você leia, entenda e esteja de acordo com este regulamento antes de realizar sua inscrição/votação.</div>
+          <div class="reg-article"><span class="reg-article-num">9.1</span> Para viabilizar o projeto contaremos com apoiadores voluntários, sem qualquer relação contratual com o Projeto Impactos Positivos.</div>
+          <div class="reg-article"><span class="reg-article-num">9.2</span> É importante que você leia, entenda e esteja de acordo com este regulamento antes de realizar sua inscrição ou votação.</div>
           <div class="reg-article"><span class="reg-article-num">9.3</span> A equipe de tecnologia fornecerá suporte em caso de falhas. Instabilidades por alto volume de acessos não resultarão em prorrogação de prazos.</div>
-          <div class="reg-article"><span class="reg-article-num">9.4</span> O participante concorda, pelo simples ato de inscrição, votação e participação, que a empresa promotora e seus representantes não serão responsáveis por danos oriundos da participação no concurso ou de fatores externos.</div>
-          <div class="reg-article"><span class="reg-article-num">9.5</span> A empresa promotora reserva-se o direito de adiar, modificar ou alterar este concurso por qualquer razão, com divulgação em <a href="https://impactospositivos.com" target="_blank" rel="noopener" class="reg-ext-link">impactospositivos.com</a>.</div>
-          <div class="reg-article"><span class="reg-article-num">9.6</span> As decisões da empresa promotora são e serão finais e irrecorríveis.</div>
-          <div class="reg-article"><span class="reg-article-num">9.7</span> Será automaticamente excluído o participante que tentar fraudar ou burlar as regras estabelecidas neste regulamento.</div>
+          <div class="reg-article"><span class="reg-article-num">9.4</span> O participante concorda que a empresa promotora e seus representantes não serão responsáveis por danos oriundos da participação no concurso.</div>
+          <div class="reg-article"><span class="reg-article-num">9.5</span> A empresa promotora reserva-se o direito de adiar, modificar ou alterar este concurso, com divulgação em <a href="https://impactospositivos.com" target="_blank" rel="noopener" class="reg-ext-link">impactospositivos.com</a>.</div>
+          <div class="reg-article"><span class="reg-article-num">9.6</span> As decisões da empresa promotora são finais e irrecorríveis.</div>
+          <div class="reg-article"><span class="reg-article-num">9.7</span> Será automaticamente excluído o participante que tentar fraudar ou burlar as regras estabelecidas.</div>
           <div class="reg-article"><span class="reg-article-num">9.8</span> Denúncias serão analisadas em até 10 dias, garantindo ampla defesa e contraditório ao denunciado.</div>
-          <div class="reg-article"><span class="reg-article-num">9.9</span> Após o retorno do denunciado, a promotora analisará os documentos e alegações para emitir sua decisão.</div>
-          <div class="reg-article"><span class="reg-article-num">9.10</span> Todo o processo de denúncia será conduzido de forma confidencial. Em caso de desclassificação, a promotora se compromete a não divulgar publicamente tal ação.</div>
+          <div class="reg-article"><span class="reg-article-num">9.9</span> Após o retorno do denunciado, a promotora analisará os documentos e emitirá sua decisão.</div>
+          <div class="reg-article"><span class="reg-article-num">9.10</span> Todo o processo de denúncia será conduzido de forma confidencial.</div>
         </section>
 
-        <!-- 10. Dados Pessoais / LGPD -->
+        <!-- 10. LGPD -->
         <section id="sec-dados" class="reg-section">
           <div class="d-flex align-items-start gap-3 mb-3">
             <span class="reg-section-num">10</span>
             <h2 class="reg-section-title mb-0">Coleta e Uso de Dados Pessoais (LGPD)</h2>
           </div>
-          <div class="reg-article"><span class="reg-article-num">10.1</span> Estamos comprometidos com a <strong>Lei Geral de Proteção de Dados (LGPD)</strong>. Este tópico demonstra como os dados são tratados, para quais finalidades são coletados e como exercer os direitos previstos na legislação.</div>
-          <div class="reg-article"><span class="reg-article-num">10.2</span> Para se inscrever, será necessário informar, além dos dados da pessoa jurídica, os dados pessoais do representante conforme o item 3 deste regulamento, tratados a partir do link <a href="https://www.impactospositivos.com" target="_blank" rel="noopener" class="reg-ext-link">www.impactospositivos.com</a>.</div>
-          <div class="reg-article"><span class="reg-article-num">10.3</span> Selecionaremos adequadamente as bases legais relacionadas à coleta dos dados pessoais e atenderemos diretamente às solicitações quanto aos direitos previstos na LGPD.</div>
+          <div class="reg-article"><span class="reg-article-num">10.1</span> Estamos comprometidos com a <strong>Lei Geral de Proteção de Dados (LGPD)</strong>, demonstrando como os dados são tratados e para quais finalidades são coletados.</div>
+          <div class="reg-article"><span class="reg-article-num">10.2</span> Para se inscrever será necessário informar dados da pessoa jurídica e pessoais do representante, conforme o item 3, tratados a partir de <a href="https://www.impactospositivos.com" target="_blank" rel="noopener" class="reg-ext-link">www.impactospositivos.com</a>.</div>
+          <div class="reg-article"><span class="reg-article-num">10.3</span> Selecionaremos adequadamente as bases legais e atenderemos às solicitações de direitos previstos na LGPD.</div>
           <div class="reg-article">
-            <span class="reg-article-num">10.4</span> Os seguintes dados poderão ser coletados:
+            <span class="reg-article-num">10.4</span> Dados que poderão ser coletados:
             <ul class="mt-2">
-              <li><strong>Dados de cadastro do representante (inscrição):</strong> nome completo, CPF, data de nascimento, e-mail, telefone, gênero, formação acadêmica, endereço completo.</li>
-              <li><strong>Dados de identificação e dispositivo:</strong> endereço IP, endereço MAC, modelo, fabricante, sistema operacional, operadora, tipo de navegador, velocidade de conexão e geolocalização.</li>
-              <li><strong>Dados de navegação:</strong> cookies, páginas visitadas, buscas realizadas, duração da visita, localização geográfica e tipo de navegador.</li>
+              <li><strong>Cadastro do representante:</strong> nome completo, CPF, data de nascimento, e-mail, telefone, gênero, formação acadêmica, endereço completo.</li>
+              <li><strong>Identificação e dispositivo:</strong> endereço IP, MAC, modelo, sistema operacional, navegador, velocidade de conexão e geolocalização.</li>
+              <li><strong>Navegação:</strong> cookies, páginas visitadas, buscas realizadas, duração da visita e tipo de navegador.</li>
             </ul>
           </div>
-          <div class="reg-article"><span class="reg-article-num">10.5</span> Os dados pessoais serão coletados para finalidades específicas, evitando coleta em excesso ou tratamento genérico sem propósitos objetivos.</div>
-          <div class="reg-article"><span class="reg-article-num">10.6</span> Coletamos dados para: inscrição no prêmio, atendimento aos inscritos, comunicados de novidades, cumprimento de determinações judiciais, prevenção a fraudes e registro legal de acesso à plataforma.</div>
-          <div class="reg-article"><span class="reg-article-num">10.7</span> Quando houver redirecionamento para sites de terceiros, não nos responsabilizamos pela coleta e tratamento de dados nesses ambientes. Verifique a Política de Privacidade dos terceiros.</div>
+          <div class="reg-article"><span class="reg-article-num">10.5</span> Os dados serão coletados para finalidades específicas, evitando coleta em excesso ou sem propósitos objetivos.</div>
+          <div class="reg-article"><span class="reg-article-num">10.6</span> Coletamos dados para: inscrição no prêmio, atendimento, comunicados, cumprimento de determinações judiciais, prevenção a fraudes e registro legal de acesso.</div>
+          <div class="reg-article"><span class="reg-article-num">10.7</span> Não nos responsabilizamos pela coleta de dados em sites de terceiros para os quais haja redirecionamento.</div>
           <div class="reg-article">
             <span class="reg-article-num">10.8</span> Categorias de destinatários com os quais podemos compartilhar os dados:
             <ul class="mt-2">
-              <li>Empresas que fornecem acesso aos nossos serviços e nos auxiliam em sua prestação.</li>
+              <li>Empresas que fornecem e auxiliam na prestação dos nossos serviços.</li>
               <li>Terceiros com os quais devemos cumprir obrigações legais (órgãos governamentais, ANPD, poder judiciário).</li>
-              <li>Parceiros, patrocinadores, apoiadores e incentivadores do projeto que auxiliam nos estudos sobre o ecossistema de impacto do Brasil.</li>
+              <li>Parceiros, patrocinadores e apoiadores que auxiliam nos estudos sobre o ecossistema de impacto do Brasil.</li>
             </ul>
           </div>
           <div class="reg-article">
-            <span class="reg-article-num">10.9</span>
-            Para exercer seus direitos previstos na LGPD, envie um e-mail para <a href="mailto:contato@impactospositivos.com" class="reg-ext-link">contato@impactospositivos.com</a>.
+            <span class="reg-article-num">10.9</span> Para exercer seus direitos previstos na LGPD, envie um e-mail para <a href="mailto:contato@impactospositivos.com" class="reg-ext-link">contato@impactospositivos.com</a>.
           </div>
         </section>
 
         <!-- Promotora -->
         <section id="sec-promotora" class="reg-section" style="border-bottom:0;">
           <div class="d-flex align-items-start gap-3 mb-3">
-            <span class="reg-section-num" style="background:#95BCCC;color:#1E3425;"><i class="bi bi-building" style="font-size:.85rem;"></i></span>
+            <span class="reg-section-num" style="background:#95BCCC;color:#1E3425;">
+              <i class="bi bi-building" style="font-size:.85rem;"></i>
+            </span>
             <h2 class="reg-section-title mb-0">É Promotora deste Concurso</h2>
           </div>
           <div class="reg-promotora-box">
@@ -777,14 +457,11 @@ $page_title = 'Regulamento do Prêmio Impactos Positivos 2026';
               <div class="col-md-6">
                 <p class="mb-1"><strong>Endereço:</strong> Rua Apeninos, 429 cj. 1206</p>
                 <p class="mb-1"><strong>Bairro:</strong> Aclimação — CEP: 01533-000</p>
-                <p class="mb-1"><strong>Cidade / Estado:</strong> São Paulo / SP</p>
-                <p class="mb-1"><strong>País:</strong> Brasil</p>
+                <p class="mb-1"><strong>Cidade / Estado:</strong> São Paulo / SP — Brasil</p>
                 <p class="mb-0"><strong>Última atualização:</strong> 31 de março de 2026.</p>
               </div>
             </div>
           </div>
-
-          <!-- Nota de rodapé BNDES -->
           <p class="mt-3" style="font-size:.82rem;color:#6c8070;">
             <sup>[1]</sup> Empresas que fomentam o ecossistema de impacto considerando a receita anual de acordo com a classificação do BNDES.
             Fonte: <a href="https://www.bndes.gov.br/wps/portal/site/home/financiamento/guia/porte-de-empresa" target="_blank" rel="noopener" class="reg-ext-link">bndes.gov.br/porte-de-empresa</a>.
@@ -809,43 +486,40 @@ $page_title = 'Regulamento do Prêmio Impactos Positivos 2026';
       </div>
       <!-- /col conteúdo -->
     </div>
-  </main>
+    <!-- /row -->
+  </div>
+  <!-- /container -->
+</section>
+<!-- /CONTEÚDO -->
 
-  <?php include __DIR__ . '/includes/footer.php'; ?>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-  <script>
-    // Highlight do item do índice conforme scroll
-    (function () {
-      const links = document.querySelectorAll('.reg-toc-list a');
-      const targets = [];
-      links.forEach(function (link) {
-        const href = link.getAttribute('href');
-        if (href && href.startsWith('#')) {
-          const el = document.querySelector(href);
-          if (el) targets.push({ link, el });
-        }
-      });
-
-      function onScroll() {
-        let current = null;
-        targets.forEach(function ({ el }) {
-          if (window.scrollY >= el.offsetTop - 120) current = el;
-        });
-        links.forEach(function (l) { l.style.background = ''; l.style.color = ''; });
-        if (current) {
-          const match = targets.find(function (t) { return t.el === current; });
-          if (match) {
-            match.link.style.background = '#f0f4ed';
-            match.link.style.color = '#1E3425';
-          }
-        }
+<script>
+  /* Scroll-spy: destaca o item do índice conforme seção visível */
+  (function () {
+    const links = document.querySelectorAll('.reg-toc-list a');
+    const targets = [];
+    links.forEach(function (link) {
+      const href = link.getAttribute('href');
+      if (href && href.startsWith('#')) {
+        const el = document.querySelector(href);
+        if (el) targets.push({ link, el });
       }
+    });
+    function onScroll() {
+      let current = null;
+      targets.forEach(function ({ el }) {
+        if (window.scrollY >= el.offsetTop - 120) current = el;
+      });
+      links.forEach(function (l) {
+        l.classList.remove('reg-toc-link--active');
+      });
+      if (current) {
+        const match = targets.find(function (t) { return t.el === current; });
+        if (match) match.link.classList.add('reg-toc-link--active');
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+  })();
+</script>
 
-      window.addEventListener('scroll', onScroll, { passive: true });
-    })();
-  </script>
-
-</body>
-</html>
+<?php include __DIR__ . '/app/views/public/footer_public.php'; ?>

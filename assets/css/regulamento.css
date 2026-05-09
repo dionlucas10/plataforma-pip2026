@@ -1,0 +1,419 @@
+/* ================================================================
+   REGULAMENTO DO PRÊIMO IMPACTOS POSITIVOS 2026
+   Adicionar ao style.css (ou importar via @import no style.css)
+   ================================================================ */
+
+/* ────────────────────────────────
+   HERO
+──────────────────────────────── */
+.reg-hero {
+  background: linear-gradient(135deg, #1E3425 0%, #2d5038 100%);
+  padding: 3.5rem 0 3rem;
+  position: relative;
+  overflow: hidden;
+  margin-left:  calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
+  padding-left: calc(50vw - 50%);
+  padding-right: calc(50vw - 50%);
+}
+
+.reg-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('/assets/images/background-02.png') no-repeat center/cover;
+  opacity: .06;
+  pointer-events: none;
+}
+
+.reg-hero .container {
+  position: relative;
+  z-index: 1;
+}
+
+.reg-hero-title {
+  font-size: clamp(1.7rem, 3vw, 2.5rem);
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.15;
+}
+
+.reg-hero-sub {
+  color: rgba(255, 255, 255, .75);
+  font-size: 1rem;
+  line-height: 1.75;
+  max-width: 600px;
+}
+
+.reg-update-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  background: rgba(205, 222, 0, .18);
+  color: #CDDE00;
+  border-radius: 999px;
+  padding: .35rem .9rem;
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+.reg-hero-info-item {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  color: rgba(255, 255, 255, .8);
+  font-size: .9rem;
+}
+
+.reg-hero-info-item strong {
+  color: #fff;
+}
+
+@media (max-width: 767.98px) {
+  .reg-hero {
+    padding-top: 2.5rem;
+    padding-bottom: 2rem;
+  }
+}
+
+
+/* ────────────────────────────────
+   ÍNDICE LATERAL (ToC)
+──────────────────────────────── */
+.reg-toc {
+  position: sticky;
+  top: 1.5rem;
+  background: #fff;
+  border: 1px solid rgba(30, 52, 37, .08);
+  border-radius: 1.2rem;
+  padding: 1.25rem;
+  box-shadow: 0 8px 24px rgba(30, 52, 37, .06);
+}
+
+.reg-toc-title {
+  font-size: .9rem;
+  font-weight: 800;
+  color: #1E3425;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: .9rem;
+  padding-bottom: .65rem;
+  border-bottom: 2px solid #CDDE00;
+}
+
+.reg-toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+}
+
+.reg-toc-list a {
+  display: block;
+  padding: .4rem .65rem;
+  border-radius: .5rem;
+  font-size: .85rem;
+  color: #4a5e4f;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background .15s, color .15s;
+}
+
+.reg-toc-list a:hover,
+.reg-toc-list a.reg-toc-link--active {
+  background: #f0f4ed;
+  color: #1E3425;
+}
+
+.toc-num {
+  display: inline-block;
+  min-width: 1.5rem;
+  font-weight: 800;
+  color: #97A327;
+}
+
+.reg-toc-cta {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(30, 52, 37, .08);
+}
+
+@media (max-width: 991.98px) {
+  .reg-toc {
+    position: static;
+    margin-bottom: 2rem;
+  }
+}
+
+
+/* ────────────────────────────────
+   SEÇÕES DO REGULAMENTO
+──────────────────────────────── */
+.reg-section {
+  scroll-margin-top: 5rem;
+  padding-top: 2.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(30, 52, 37, .08);
+}
+
+.reg-section:last-of-type {
+  border-bottom: 0;
+}
+
+.reg-section-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #CDDE00;
+  color: #1E3425;
+  font-weight: 800;
+  font-size: .88rem;
+  flex-shrink: 0;
+}
+
+.reg-section-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #1E3425;
+}
+
+.reg-section p,
+.reg-section li {
+  color: #3a4f3f;
+  font-size: .97rem;
+  line-height: 1.8;
+}
+
+.reg-section ul,
+.reg-section ol {
+  padding-left: 1.35rem;
+}
+
+.reg-section ul li { list-style: disc; }
+.reg-section ol > li { margin-bottom: .65rem; }
+
+.reg-subsection-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #1E3425;
+  margin-top: 1.5rem;
+  margin-bottom: .85rem;
+}
+
+
+/* ────────────────────────────────
+   ARTIGOS NUMERADOS
+──────────────────────────────── */
+.reg-article {
+  margin-bottom: .85rem;
+  padding: .9rem 1rem;
+  border-radius: .85rem;
+  background: #f8faf8;
+  border: 1px solid rgba(30, 52, 37, .06);
+  color: #3a4f3f;
+  font-size: .97rem;
+  line-height: 1.8;
+}
+
+.reg-article-num {
+  display: inline-block;
+  font-weight: 800;
+  color: #97A327;
+  margin-right: .4rem;
+}
+
+
+/* ────────────────────────────────
+   CARDS DE CATEGORIA
+──────────────────────────────── */
+.reg-categoria-card {
+  background: #fff;
+  border: 1px solid rgba(30, 52, 37, .09);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  border-left: 4px solid #CDDE00;
+  transition: box-shadow .15s, transform .15s;
+  height: 100%;
+}
+
+.reg-categoria-card:hover {
+  box-shadow: 0 10px 24px rgba(30, 52, 37, .09);
+  transform: translateY(-2px);
+}
+
+.reg-categoria-card h5 {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1E3425;
+  margin-bottom: .45rem;
+}
+
+.reg-categoria-card p {
+  font-size: .9rem;
+  color: #6c8070;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.reg-categoria-card--destaque {
+  border-left-color: #97A327;
+  background: #f8fbef;
+}
+
+
+/* ────────────────────────────────
+   ALERTA DE ATENÇÃO
+──────────────────────────────── */
+.reg-alert-atencao {
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+  border-radius: .75rem;
+  padding: 1rem 1.1rem;
+  color: #664d03;
+}
+
+
+/* ────────────────────────────────
+   FASES DE VOTAÇÃO
+──────────────────────────────── */
+.reg-fase-card {
+  background: #fff;
+  border: 1px solid rgba(30, 52, 37, .09);
+  border-radius: 1.2rem;
+  padding: 1.5rem 1.25rem;
+  height: 100%;
+  position: relative;
+}
+
+.reg-fase-card p {
+  font-size: .9rem;
+  color: #3a4f3f;
+  line-height: 1.6;
+}
+
+.reg-fase-card--final {
+  border-color: rgba(205, 222, 0, .4);
+  background: #f9fce8;
+}
+
+.reg-fase-badge {
+  position: absolute;
+  top: -12px;
+  left: 1.25rem;
+  background: #1E3425;
+  color: #CDDE00;
+  border-radius: 999px;
+  padding: .25rem .85rem;
+  font-size: .75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.reg-fase-badge--final {
+  background: #CDDE00;
+  color: #1E3425;
+}
+
+.reg-fase-periodo {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  background: #f0f4ed;
+  color: #1E3425;
+  border-radius: 999px;
+  padding: .3rem .8rem;
+  font-size: .8rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 767.98px) {
+  .reg-fase-card {
+    margin-top: 1.25rem;
+  }
+}
+
+
+/* ────────────────────────────────
+   BOARD DE CONSELHEIROS
+──────────────────────────────── */
+.reg-board-card {
+  background: #fff;
+  border: 1px solid rgba(30, 52, 37, .08);
+  border-radius: 1rem;
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: box-shadow .15s;
+}
+
+.reg-board-card:hover {
+  box-shadow: 0 8px 20px rgba(30, 52, 37, .08);
+}
+
+.reg-board-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #1E3425;
+  color: #CDDE00;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.05rem;
+  flex-shrink: 0;
+}
+
+.reg-board-name {
+  font-weight: 700;
+  color: #1E3425;
+  font-size: .95rem;
+  line-height: 1.25;
+}
+
+.reg-board-role {
+  font-size: .82rem;
+  color: #97A327;
+  font-weight: 600;
+}
+
+
+/* ────────────────────────────────
+   BOX PROMOTORA
+──────────────────────────────── */
+.reg-promotora-box {
+  background: #f5f7f2;
+  border: 1px solid rgba(30, 52, 37, .1);
+  border-radius: 1.2rem;
+  padding: 1.5rem;
+}
+
+.reg-promotora-box p {
+  color: #3a4f3f;
+  font-size: .95rem;
+  line-height: 1.7;
+}
+
+
+/* ────────────────────────────────
+   LINK EXTERNO DISCRETO
+──────────────────────────────── */
+.reg-ext-link {
+  color: #5a8a62;
+  font-weight: 600;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.reg-ext-link:hover {
+  color: #1E3425;
+  text-decoration: underline;
+}
