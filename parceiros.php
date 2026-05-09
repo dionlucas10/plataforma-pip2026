@@ -24,7 +24,7 @@ $f_eixo = trim($_GET['eixo'] ?? '');
 $f_setor = trim($_GET['setor'] ?? '');
 $f_perfil = trim($_GET['perfil'] ?? '');
 
-// Busca parceiros públicos
+// Busca TODOS os parceiros (com ou sem perfil publicado)
 $sql = "
     SELECT 
         p.id,
@@ -33,16 +33,17 @@ $sql = "
         pp.slogan,
         pp.setor_atuacao,
         pp.imagem_capa_url,
+        pp.perfil_publicado,
         pp.logo_url AS logo_perfil_url,
         c.logo_url AS logo_contrato_url,
+        c.contrato_url,
         pi.eixos_interesse,
         pi.setores_interesse,
         pi.perfil_impacto
     FROM parceiros p
-    INNER JOIN parceiros_perfil pp ON pp.parceiro_id = p.id
+    LEFT JOIN parceiros_perfil pp ON pp.parceiro_id = p.id
     LEFT JOIN parceiro_contrato c ON c.parceiro_id = p.id
     LEFT JOIN parceiro_interesses pi ON pi.parceiro_id = p.id
-    WHERE pp.perfil_publicado = 1
 ";
 
 $params = [];
@@ -77,13 +78,11 @@ $parceiros = array_values(array_filter($parceirosBrutos, function ($parceiro) us
     return true;
 }));
 
-// Filtros disponíveis
+// Filtros disponíveis (baseados em todos os parceiros)
 $ods = $pdo->query("
     SELECT DISTINCT o.id, o.nome, o.icone_url
     FROM parceiro_ods po
     INNER JOIN ods o ON o.id = po.ods_id
-    INNER JOIN parceiros_perfil pp ON pp.parceiro_id = po.parceiro_id
-    WHERE pp.perfil_publicado = 1
     ORDER BY o.id
 ")->fetchAll();
 
@@ -93,8 +92,6 @@ $stmtFiltros = $pdo->query("
         pi.setores_interesse,
         pi.perfil_impacto
     FROM parceiro_interesses pi
-    INNER JOIN parceiros_perfil pp ON pp.parceiro_id = pi.parceiro_id
-    WHERE pp.perfil_publicado = 1
 ");
 $filtrosRaw = $stmtFiltros->fetchAll();
 
@@ -253,13 +250,23 @@ include __DIR__ . '/app/views/public/header_public.php';
         <div class="row g-4">
             <?php foreach ($parceiros as $p): ?>
                 <?php
-                $nome = $p['nome_fantasia'] ?: ($p['razao_social'] ?? 'Parceiro');
-                $logo = $p['logo_perfil_url'] ?: ($p['logo_contrato_url'] ?? '');
-                $capa = $p['imagem_capa_url'] ?? '';
+                $nome           = $p['nome_fantasia'] ?: ($p['razao_social'] ?? 'Parceiro');
+                $logo           = $p['logo_perfil_url'] ?: ($p['logo_contrato_url'] ?? '');
+                $capa           = $p['imagem_capa_url'] ?? '';
+                $perfilPublicado = !empty($p['perfil_publicado']);
+                // Se não tem capa e não tem perfil publicado, usa contrato_url como imagem de capa
+                if (empty($capa) && !$perfilPublicado && !empty($p['contrato_url'])) {
+                    $capa = $p['contrato_url'];
+                }
                 ?>
                 <div class="col-md-6 col-xl-4">
                     <article class="vitrine-card parceiro-card-publico h-100">
-                        <a href="perfil_parceiro.php?id=<?= (int)$p['id'] ?>" class="text-decoration-none text-reset d-block h-100">
+                        <?php if ($perfilPublicado): ?>
+                            <a href="perfil_parceiro.php?id=<?= (int)$p['id'] ?>" class="text-decoration-none text-reset d-block h-100">
+                        <?php else: ?>
+                            <div class="d-block h-100">
+                        <?php endif; ?>
+
                             <div class="vitrine-card-media <?= empty($capa) ? 'sem-capa' : '' ?>">
                                 <?php if (!empty($capa)): ?>
                                     <img
@@ -304,12 +311,19 @@ include __DIR__ . '/app/views/public/header_public.php';
                                     <?php endif; ?>
                                 </div>
                             </div>
-                        </a>
+
+                        <?php if ($perfilPublicado): ?>
+                            </a>
+                        <?php else: ?>
+                            </div>
+                        <?php endif; ?>
 
                         <div class="vitrine-card-actions">
-                            <a href="perfil_parceiro.php?id=<?= (int)$p['id'] ?>" class="btn btn-primary">
-                                Ver perfil
-                            </a>
+                            <?php if ($perfilPublicado): ?>
+                                <a href="perfil_parceiro.php?id=<?= (int)$p['id'] ?>" class="btn btn-primary">
+                                    Ver perfil
+                                </a>
+                            <?php endif; ?>
                             <a href="#" class="btn btn-outline-secondary">
                                 Conectar
                             </a>
