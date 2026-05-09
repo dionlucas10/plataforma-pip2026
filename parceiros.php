@@ -35,13 +35,11 @@ $sql = "
         pp.imagem_capa_url,
         pp.perfil_publicado,
         pp.logo_url AS logo_perfil_url,
-        c.logo_url AS logo_contrato_url,
         pi.eixos_interesse,
         pi.setores_interesse,
         pi.perfil_impacto
     FROM parceiros p
     LEFT JOIN parceiros_perfil pp ON pp.parceiro_id = p.id
-    LEFT JOIN parceiro_contrato c ON c.parceiro_id = p.id
     LEFT JOIN parceiro_interesses pi ON pi.parceiro_id = p.id
 ";
 
@@ -250,7 +248,7 @@ include __DIR__ . '/app/views/public/header_public.php';
             <?php foreach ($parceiros as $p): ?>
                 <?php
                 $nome            = $p['nome_fantasia'] ?: ($p['razao_social'] ?? 'Parceiro');
-                $logo            = $p['logo_perfil_url'] ?: ($p['logo_contrato_url'] ?? '');
+                $logo            = $p['logo_perfil_url'] ?? '';
                 $capa            = $p['imagem_capa_url'] ?? '';
                 $perfilPublicado = !empty($p['perfil_publicado']);
                 ?>
