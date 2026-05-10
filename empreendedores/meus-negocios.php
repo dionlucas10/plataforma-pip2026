@@ -38,34 +38,34 @@ function h(?string $value): string
 function labelStatusPremiacao(?string $status): string
 {
     return match ($status) {
-        'rascunho' => 'Rascunho',
-        'enviada' => 'Inscrito — Em análise',
-        'emtriagem' => 'Em triagem',
-        'elegivel' => 'Elegível',
-        'inelegivel' => 'Inelegível',
-        'classificadafase1' => 'Classificado Fase 1',
-        'classificadafase2' => 'Classificado Fase 2',
-        'finalista' => 'Finalista',
-        'vencedora' => 'Vencedora',
-        'eliminada' => 'Eliminada',
-        default => 'Não inscrito',
+        'rascunho'          => 'Rascunho',
+        'enviada'           => 'Inscrito — Em análise',
+        'emtriagem'         => 'Em triagem',
+        'elegivel'          => 'Elegível',
+        'inelegivel'        => 'Inelegível',
+        'classificadafase1' => 'Classificado',
+        'classificadafase2' => 'Classificado',
+        'finalista'         => 'Finalista',
+        'vencedora'         => 'Vencedora',
+        'eliminada'         => 'Eliminada',
+        default             => 'Não inscrito',
     };
 }
 
 function badgePremiacao(?string $status): array
 {
     return match ($status) {
-        'enviada' => ['bg' => '#e3f2fd', 'color' => '#1565c0'],
-        'emtriagem' => ['bg' => '#fff8e1', 'color' => '#f57f17'],
-        'elegivel' => ['bg' => '#e8f5e9', 'color' => '#2e7d32'],
-        'inelegivel' => ['bg' => '#fdecea', 'color' => '#c62828'],
+        'enviada'           => ['bg' => '#e3f2fd', 'color' => '#1565c0'],
+        'emtriagem'         => ['bg' => '#fff8e1', 'color' => '#f57f17'],
+        'elegivel'          => ['bg' => '#e8f5e9', 'color' => '#2e7d32'],
+        'inelegivel'        => ['bg' => '#fdecea', 'color' => '#c62828'],
         'classificadafase1' => ['bg' => '#e0f7fa', 'color' => '#006064'],
         'classificadafase2' => ['bg' => '#e0f2f1', 'color' => '#00695c'],
-        'finalista' => ['bg' => '#ede7f6', 'color' => '#5e35b1'],
-        'vencedora' => ['bg' => '#fff3cd', 'color' => '#856404'],
-        'eliminada' => ['bg' => '#fdecea', 'color' => '#c62828'],
-        'rascunho' => ['bg' => '#f5f5f5', 'color' => '#757575'],
-        default => ['bg' => '#f5f5f5', 'color' => '#757575'],
+        'finalista'         => ['bg' => '#ede7f6', 'color' => '#5e35b1'],
+        'vencedora'         => ['bg' => '#fff3cd', 'color' => '#856404'],
+        'eliminada'         => ['bg' => '#fdecea', 'color' => '#c62828'],
+        'rascunho'          => ['bg' => '#f5f5f5', 'color' => '#757575'],
+        default             => ['bg' => '#f5f5f5', 'color' => '#757575'],
     };
 }
 
@@ -494,7 +494,6 @@ include __DIR__ . '/../app/views/empreendedor/header.php';
         $statusPremiacao = $n['premiacao_status'] ?? null;
         $podeParticipar = $completo && $publicado && !$encerrado;
 
-        // DEPOIS
         $vitrineBadge = match($statusVitrine) {
             'aprovado'    => ['bg' => '#e8f5e9', 'color' => '#2e7d32', 'text' => 'Aprovado',    'icon' => 'bi-check-circle-fill'],
             'em_analise'  => ['bg' => '#fff8e1', 'color' => '#f57f17', 'text' => 'Em Análise',  'icon' => 'bi-hourglass-split'],
@@ -895,7 +894,6 @@ function abrirModalPremiacao(negocioId, desejaParticipar, aceiteRegulamento, ace
     document.getElementById('modal_aceite_regulamento').checked  = aceiteRegulamento === 1;
     document.getElementById('modal_aceite_veracidade').checked   = aceiteVeracidade === 1;
 
-    // Limpa alertas e bordas anteriores ao abrir
     const alertaAnterior = document.getElementById('alerta-modal-premiacao');
     if (alertaAnterior) alertaAnterior.remove();
     ['modal_deseja_participar','modal_aceite_regulamento','modal_aceite_veracidade'].forEach(function(id) {
@@ -909,17 +907,14 @@ function abrirModalPremiacao(negocioId, desejaParticipar, aceiteRegulamento, ace
     new bootstrap.Modal(document.getElementById('modalPremiacao')).show();
 }
 
-// Validação ao submeter o modal de premiação
 document.getElementById('formModalPremiacao').addEventListener('submit', function(e) {
     const deseja      = document.getElementById('modal_deseja_participar');
     const regulamento = document.getElementById('modal_aceite_regulamento');
     const veracidade  = document.getElementById('modal_aceite_veracidade');
 
-    // Remove alerta anterior
     const anterior = document.getElementById('alerta-modal-premiacao');
     if (anterior) anterior.remove();
 
-    // Limpa bordas
     [deseja, regulamento, veracidade].forEach(function(el) {
         el.closest('.form-check').style.border    = '1px solid #e8ede5';
         el.closest('.form-check').style.background = '#f5f7f2';
@@ -961,7 +956,6 @@ document.getElementById('formModalPremiacao').addEventListener('submit', functio
     }
 });
 
-// Limpa visual de erro ao interagir com os checkboxes
 ['modal_deseja_participar','modal_aceite_regulamento','modal_aceite_veracidade'].forEach(function(id) {
     const el = document.getElementById(id);
     if (!el) return;
