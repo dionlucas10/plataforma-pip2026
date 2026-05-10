@@ -66,22 +66,45 @@ if ($faseAtiva) {
 $votacaoAberta = $faseAtiva && $votacaoAbertaPorData;
 
 // ── Determina o pool de status elegíveis para a fase ativa ───────────────────
+/**
+ * Retorna o IN(...) de status válidos para a fase atual:
+ *
+ * - tipo_fase = 'final'         → 'finalista','classificada_fase_2'
+ *   (negócios aprovados na fase 2 podem ter qualquer um dos dois)
+ *
+ * - rodada 1 (classificatória)  → 'elegivel'
+ *
+ * - rodada N > 1                → 'elegivel' + todos os
+ *   'classificada_fase_1' ... 'classificada_fase_{N-1}'
+ *   (garante que quem passou nas fases anteriores sempre aparece)
+ */
 function buildStatusPoolPublic(?array $fase): string
 {
     if (!$fase) return "'elegivel'";
+
     $tipo   = $fase['tipo_fase'] ?? 'classificatoria';
     $rodada = (int)($fase['rodada'] ?? 1);
+
     if ($tipo === 'final') {
-        return "'finalista'";
+        // Fase final: aceita tanto 'finalista' quanto 'classificada_fase_2'
+        return "'finalista','classificada_fase_2'";
     }
+
+    // Fase classificatória rodada 1
     if ($rodada <= 1) {
-        return "'elegivel','classificada_fase_1'";
+        return "'elegivel'";
     }
-    $anterior = 'classificada_fase_' . ($rodada - 1);
-    return "'elegivel','{$anterior}','{$anterior}'";
+
+    // Fase classificatória rodada N > 1:
+    // inclui 'elegivel' + 'classificada_fase_1' até 'classificada_fase_{N-1}'
+    $pool = ["'elegivel'"];
+    for ($i = 1; $i < $rodada; $i++) {
+        $pool[] = "'classificada_fase_{$i}'";
+    }
+    return implode(',', $pool);
 }
 
-$statusPool = buildStatusPoolPublic($faseAtiva);
+$statusPool    = buildStatusPoolPublic($faseAtiva);
 $statusPoolArr = array_unique(array_map('trim', explode(',', str_replace("'", '', $statusPool))));
 $statusPoolIn  = implode(',', array_map(fn($s) => "'$s'", $statusPoolArr));
 
