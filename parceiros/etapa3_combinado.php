@@ -17,7 +17,7 @@ if (!isset($_SESSION['parceiro_id'])) {
 $parceiro_id = $_SESSION['parceiro_id'];
 
 // Busca os dados do contrato para pré-preencher
-$stmt = $pdo->prepare("SELECT escopo_atuacao, escopo_outro, nivel_engajamento, oferece_premiacao, premio_descricao FROM parceiro_contrato WHERE parceiro_id = ?");
+$stmt = $pdo->prepare("SELECT duracao_parceria, escopo_atuacao, escopo_outro, nivel_engajamento, oferece_premiacao, premio_descricao FROM parceiro_contrato WHERE parceiro_id = ?");
 
 $stmt->execute([$parceiro_id]);
 $contrato = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
@@ -26,8 +26,9 @@ $contrato = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
 $escopo_salvo = !empty($contrato['escopo_atuacao']) ? json_decode($contrato['escopo_atuacao'], true) : [];
 if (!is_array($escopo_salvo)) $escopo_salvo = [];
 
-$nivel = $contrato['nivel_engajamento'] ?? '';
+$nivel        = $contrato['nivel_engajamento'] ?? '';
 $escopo_outro = $contrato['escopo_outro'] ?? '';
+$duracao      = $contrato['duracao_parceria'] ?? '';
 
 include __DIR__ . '/../app/views/public/header_public.php'; 
 ?>
@@ -61,7 +62,7 @@ include __DIR__ . '/../app/views/public/header_public.php';
                         Nesta etapa
                     </div>
                     <ul class="parceiro-step-aside-list">
-                        <li>Defina o nível de profundidade da participação da sua organização.</li>
+                        <li>Defina a duração da parceria e o nível de profundidade da participação.</li>
                         <li>Selecione os programas, frentes ou iniciativas onde a parceria irá atuar.</li>
                         <li>Informe se haverá oferta de premiação para os 4 vencedores do ano vigente.</li>
                     </ul>
@@ -85,7 +86,7 @@ include __DIR__ . '/../app/views/public/header_public.php';
                     <div>
                         <h2 class="parceiro-step-card-title mb-1">O nosso acordo</h2>
                         <p class="parceiro-step-card-subtitle mb-0">
-                            Defina o escopo, o envolvimento e as possibilidades de contribuição dentro da plataforma.
+                            Defina a duração, o escopo, o envolvimento e as possibilidades de contribuição dentro da plataforma.
                         </p>
                     </div>
                 </div>
@@ -102,36 +103,81 @@ include __DIR__ . '/../app/views/public/header_public.php';
                     <form method="POST" action="processar_etapa3.php">
                         <input type="hidden" name="from" value="<?= htmlspecialchars($_GET['from'] ?? '') ?>">
 
+                        <!-- ===== DURAÇÃO DA PARCERIA ===== -->
+                        <section class="parceiro-step-section">
+                            <div class="parceiro-step-section-head">
+                                <h3 class="parceiro-step-section-title">Duração da Parceria</h3>
+                                <p class="parceiro-step-section-text">
+                                    Selecione o período que melhor representa o interesse da sua organização em colaborar com o Impactos Positivos.
+                                </p>
+                            </div>
+
+                            <div class="parceiro-radio-stack">
+                                <?php
+                                $duracao_opcoes = [
+                                    [
+                                        'value' => 'ano_vigente',
+                                        'titulo' => 'Parceria no Ano Vigente',
+                                        'desc'   => 'Participação válida durante o ciclo atual de ações, eventos, campanhas e iniciativas da plataforma.',
+                                        'dica'   => 'Ideal para organizações que desejam iniciar sua conexão com o ecossistema de impacto.',
+                                    ],
+                                    [
+                                        'value' => 'longo_prazo',
+                                        'titulo' => 'Parceria de Longo Prazo (2 anos)',
+                                        'desc'   => 'Modelo voltado para organizações que desejam construir uma relação estratégica, contínua e de maior profundidade com o movimento Impactos Positivos.',
+                                        'dica'   => 'Permite maior integração, planejamento conjunto e fortalecimento de impacto ao longo do tempo.',
+                                    ],
+                                    [
+                                        'value' => 'projeto_especifico',
+                                        'titulo' => 'Projeto ou Ação Específica',
+                                        'desc'   => 'Participação vinculada a uma iniciativa, campanha, evento, programa ou entrega específica.',
+                                        'dica'   => 'Ideal para colaborações pontuais, ativações estratégicas ou projetos personalizados.',
+                                    ],
+                                    [
+                                        'value' => 'continua',
+                                        'titulo' => 'Parceria Contínua / Em Construção',
+                                        'desc'   => 'Para organizações interessadas em desenvolver possibilidades de colaboração de forma progressiva e aberta a novas oportunidades futuras.',
+                                        'dica'   => 'Foco em relacionamento, conexão estratégica e construção conjunta de impacto.',
+                                    ],
+                                ];
+                                foreach ($duracao_opcoes as $op):
+                                    $checked = ($duracao === $op['value']) ? 'checked' : '';
+                                ?>
+                                <label class="parceiro-radio-card">
+                                    <input class="form-check-input parceiro-radio-input" type="radio" name="duracao_parceria" value="<?= htmlspecialchars($op['value']) ?>" <?= $checked ?> required>
+                                    <span class="parceiro-radio-content">
+                                        <span class="parceiro-radio-title"><?= htmlspecialchars($op['titulo']) ?></span>
+                                        <span class="parceiro-radio-text"><?= htmlspecialchars($op['desc']) ?></span>
+                                        <span class="parceiro-radio-dica">➡️ <?= htmlspecialchars($op['dica']) ?></span>
+                                    </span>
+                                </label>
+                                <?php endforeach; ?>
+                            </div>
+                        </section>
+
+                        <!-- ===== NÍVEL DE ENGAJAMENTO ===== -->
                         <section class="parceiro-step-section">
                             <div class="parceiro-step-section-head">
                                 <h3 class="parceiro-step-section-title">Nível de Engajamento</h3>
                                 <p class="parceiro-step-section-text">
-                                    Escolha o formato que melhor representa a profundidade da atuação da sua organização.
+                                    Selecione o nível de participação desejado na parceria.
                                 </p>
                             </div>
 
                             <div class="parceiro-radio-stack">
                                 <label class="parceiro-radio-card">
-                                    <input class="form-check-input parceiro-radio-input" type="radio" name="nivel_engajamento" value="básico" <?= $nivel === 'básico' ? 'checked' : '' ?> required>
+                                    <input class="form-check-input parceiro-radio-input" type="radio" name="nivel_engajamento" value="institucional" <?= $nivel === 'institucional' ? 'checked' : '' ?> required>
                                     <span class="parceiro-radio-content">
-                                        <span class="parceiro-radio-title">Básico</span>
-                                        <span class="parceiro-radio-text">Presença institucional na plataforma.</span>
+                                        <span class="parceiro-radio-title">Institucional</span>
+                                        <span class="parceiro-radio-text">Apoio e presença institucional no ecossistema Impactos Positivos.</span>
                                     </span>
                                 </label>
 
                                 <label class="parceiro-radio-card">
-                                    <input class="form-check-input parceiro-radio-input" type="radio" name="nivel_engajamento" value="ativo" <?= $nivel === 'ativo' ? 'checked' : '' ?>>
+                                    <input class="form-check-input parceiro-radio-input" type="radio" name="nivel_engajamento" value="colaborativo_estrategico" <?= $nivel === 'colaborativo_estrategico' ? 'checked' : '' ?>>
                                     <span class="parceiro-radio-content">
-                                        <span class="parceiro-radio-title">Ativo</span>
-                                        <span class="parceiro-radio-text">Geração de conteúdo e participação em eventos.</span>
-                                    </span>
-                                </label>
-
-                                <label class="parceiro-radio-card">
-                                    <input class="form-check-input parceiro-radio-input" type="radio" name="nivel_engajamento" value="estratégico" <?= $nivel === 'estratégico' ? 'checked' : '' ?>>
-                                    <span class="parceiro-radio-content">
-                                        <span class="parceiro-radio-title">Estratégico</span>
-                                        <span class="parceiro-radio-text">Cocriação de programas e editais direcionados.</span>
+                                        <span class="parceiro-radio-title">Colaborativo &amp; Estratégico</span>
+                                        <span class="parceiro-radio-text">Participação ativa em conteúdos, eventos, campanhas, projetos e iniciativas conjuntas.</span>
                                     </span>
                                 </label>
 
@@ -139,31 +185,32 @@ include __DIR__ . '/../app/views/public/header_public.php';
                                     <input class="form-check-input parceiro-radio-input" type="radio" name="nivel_engajamento" value="estruturante" <?= $nivel === 'estruturante' ? 'checked' : '' ?>>
                                     <span class="parceiro-radio-content">
                                         <span class="parceiro-radio-title">Estruturante</span>
-                                        <span class="parceiro-radio-text">Patrocinador principal de eixos e pilares do ecossistema.</span>
+                                        <span class="parceiro-radio-text">Parceria de longo prazo com maior nível de integração, incluindo patrocínio, investimento ou apoio estruturante ao ecossistema.</span>
                                     </span>
                                 </label>
                             </div>
                         </section>
 
+                        <!-- ===== ESCOPO DE ATUAÇÃO ===== -->
                         <section class="parceiro-step-section">
                             <div class="parceiro-step-section-head">
                                 <h3 class="parceiro-step-section-title">Escopo de Atuação</h3>
                                 <p class="parceiro-step-section-text">
-                                    Selecione todas as frentes, programas ou iniciativas em que a parceria irá atuar.
+                                    Selecione uma ou mais áreas nas quais sua organização deseja atuar ou colaborar dentro do ecossistema Impactos Positivos.
                                 </p>
                             </div>
 
                             <div class="row g-3">
                                 <?php 
                                 $escopo_opcoes = [
-                                    "Plataforma geral",
-                                    "Premiação Impactos Positivos",
-                                    "Programa Impact Chains",
-                                    "Programa de Aceleração",
-                                    "Eventos e Fóruns",
-                                    "Série Narrativas de Impacto",
-                                    "Rede de Impacto",
-                                    "Conteúdos educacionais"
+                                    "Plataforma Impactos Positivos (atuação institucional e ecossistema geral)",
+                                    "Prêmio Impactos Positivos",
+                                    "Programas Especiais e Iniciativas Temáticas (Impact Chains, aceleração, mentorias, labs, etc.)",
+                                    "Eventos, encontros, conferências e experiências presenciais ou online",
+                                    "Rede de Impacto, conexões estratégicas e marketplace",
+                                    "Produção e apoio a conteúdos educativos, institucionais e promocionais",
+                                    "Projetos de comunicação, mídia e storytelling de impacto",
+                                    "Pesquisa, dados e inteligência de impacto",
                                 ];
 
                                 foreach ($escopo_opcoes as $esc): 
@@ -193,7 +240,7 @@ include __DIR__ . '/../app/views/public/header_public.php';
                                         <div class="form-check m-0">
                                             <input class="form-check-input" type="checkbox" id="check_outro" <?= !empty($escopo_outro) ? 'checked' : '' ?>>
                                             <label class="form-check-label fw-semibold" for="check_outro">
-                                                Outro escopo (especifique)
+                                                Outro (campo aberto para detalhamento)
                                             </label>
                                         </div>
 
@@ -204,7 +251,7 @@ include __DIR__ . '/../app/views/public/header_public.php';
                                                 name="escopo_outro"
                                                 id="input_outro"
                                                 value="<?= htmlspecialchars($escopo_outro) ?>"
-                                                placeholder="Ex: Projeto regional exclusivo..."
+                                                placeholder="Descreva o escopo específico da sua organização..."
                                             >
                                         </div>
                                     </div>
@@ -212,6 +259,7 @@ include __DIR__ . '/../app/views/public/header_public.php';
                             </div>
                         </section>
 
+                        <!-- ===== PREMIAÇÃO ===== -->
                         <section class="parceiro-step-section">
                             <div class="parceiro-step-section-head">
                                 <h3 class="parceiro-step-section-title">Premiação Impactos Positivos</h3>
@@ -277,11 +325,11 @@ include __DIR__ . '/../app/views/public/header_public.php';
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const checkOutro = document.getElementById("check_outro");
-    const divOutro = document.getElementById("div_outro");
+    const divOutro   = document.getElementById("div_outro");
     const inputOutro = document.getElementById("input_outro");
 
-    const premioCheck = document.getElementById("premio_check");
-    const divPremio = document.getElementById("div_premio");
+    const premioCheck    = document.getElementById("premio_check");
+    const divPremio      = document.getElementById("div_premio");
     const premioDescricao = document.getElementById("premio_descricao");
 
     if (checkOutro) {
