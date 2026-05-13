@@ -25,10 +25,10 @@ $configPages = [
     '/admin/gerenciar_notificacoes.php'
 ];
 
-$isUsuariosActive   = (bool) array_filter($usuariosPages, fn($p) => str_contains($currentPage, $p));
+$isUsuariosActive   = (bool) array_filter($usuariosPages,   fn($p) => str_contains($currentPage, $p));
 $isRelatoriosActive = (bool) array_filter($relatoriosPages, fn($p) => str_contains($currentPage, $p));
-$isPremiacaoActive  = (bool) array_filter($premiacaoPages, fn($p) => str_contains($currentPage, $p));
-$isConfigActive     = (bool) array_filter($configPages, fn($p) => str_contains($currentPage, $p));
+$isPremiacaoActive  = (bool) array_filter($premiacaoPages,  fn($p) => str_contains($currentPage, $p));
+$isConfigActive     = (bool) array_filter($configPages,     fn($p) => str_contains($currentPage, $p));
 
 $userName = $_SESSION['user_name'] ?? 'Usuário';
 $userRole = $_SESSION['user_role'] ?? '';
@@ -68,7 +68,6 @@ function isJuriOuTecnica(): bool {
   <!-- Favicon -->
   <link rel="icon" href="/assets/favicon.ico" type="image/x-icon">
 
-
   <?php if (!empty($extraHead ?? null)) echo $extraHead; ?>
 </head>
 <body>
@@ -78,7 +77,7 @@ function isJuriOuTecnica(): bool {
     <i class="bi bi-list"></i>
   </button>
 
-  <a href="/admin/dashboard.php" class="brand">
+  <a href="<?= isJuriOuTecnica() ? '/admin/votos_tecnicos.php' : '/admin/dashboard.php' ?>" class="brand">
     <div class="brand-dot"><i class="bi bi-droplet-fill"></i></div>
     <div class="brand-name">
       Impactos Positivos
@@ -106,6 +105,25 @@ function isJuriOuTecnica(): bool {
 <!-- ── Sidebar ────────────────────────────────────────── -->
 <aside class="ip-sidebar" id="ipSidebar">
 
+<?php if (isJuriOuTecnica()): ?>
+
+  <!-- Menu exclusivo para Júri e Técnica -->
+  <span class="nav-group-label">Votação</span>
+  <ul class="nav flex-column mb-1">
+    <li class="nav-item">
+      <a class="nav-link <?= isActive($currentPage, '/admin/votos_tecnicos.php') || isActive($currentPage, '/admin/visualizar_negocio.php') ?>" href="/admin/votos_tecnicos.php">
+        <?php if ($userRole === 'juri'): ?>
+          <i class="bi bi-star-fill"></i> Votar (Júri)
+        <?php else: ?>
+          <i class="bi bi-clipboard2-check-fill"></i> Votar (Técnica)
+        <?php endif; ?>
+      </a>
+    </li>
+  </ul>
+
+<?php else: ?>
+
+  <!-- Menu completo para admin / superadmin -->
   <span class="nav-group-label">Principal</span>
   <ul class="nav flex-column mb-1">
     <li class="nav-item">
@@ -169,23 +187,16 @@ function isJuriOuTecnica(): bool {
         <i class="bi bi-trophy-fill"></i> Premiação
         <i class="bi bi-chevron-down chevron"></i>
       </a>
-
       <div class="collapse <?= $isPremiacaoActive ? 'show' : '' ?>" id="PremiacaoSubmenu">
         <ul class="nav flex-column submenu">
-          <?php if (podeVerMenuCompleto()): ?>
-            <li><a class="nav-link <?= isActive($currentPage, '/admin/premiacao_edicoes.php') ?>" href="/admin/premiacao_edicoes.php"><i class="bi bi-calendar3"></i> Edições Premiação</a></li>
-            <li><a class="nav-link <?= isActive($currentPage, '/admin/premiacao_periodos.php') ?>" href="/admin/premiacao_periodos.php"><i class="bi bi-calendar3-range"></i> Periodo Premiação</a></li>
-            <li><a class="nav-link <?= isActive($currentPage, '/admin/premiacao_categorias.php') ?>" href="/admin/premiacao_categorias.php"><i class="bi bi-grid"></i> Categorias</a></li>
-            <li><a class="nav-link <?= isActive($currentPage, '/admin/premiacao_inscricoes.php') ?>" href="/admin/premiacao_inscricoes.php"><i class="bi bi-calendar-check"></i> Inscrições</a></li>
-            <li><a class="nav-link <?= isActive($currentPage, '/admin/premiacao_voto_popular.php') ?>" href="/admin/premiacao_voto_popular.php"><i class="bi bi-bar-chart-steps"></i> Votos Popular</a></li>
-            <li><a class="nav-link <?= isActive($currentPage, '/admin/premiacao_voto_tecnico.php') ?>" href="/admin/premiacao_voto_tecnico.php"><i class="bi bi-person-gear"></i> Votos Bancada Técnica</a></li>
-            <li><a class="nav-link <?= isActive($currentPage, '/admin/premiacao_juri.php') ?>" href="/admin/premiacao_juri.php"><i class="bi bi-person-check"></i> Votos Juri</a></li>
-            <li><a class="nav-link <?= isActive($currentPage, '/admin/premiacao_resultados.php') ?>" href="/admin/premiacao_resultados.php"><i class="bi bi-award"></i> Resultados</a></li>
-          <?php elseif (isJuriOuTecnica()): ?>
-            <li><a class="nav-link <?= isActive($currentPage, '/admin/premiacao_voto_popular.php') ?>" href="/admin/premiacao_voto_popular.php"><i class="bi bi-bar-chart-steps"></i> Votos Popular</a></li>
-            <li><a class="nav-link <?= isActive($currentPage, '/admin/premiacao_voto_tecnico.php') ?>" href="/admin/premiacao_voto_tecnico.php"><i class="bi bi-person-gear"></i> Votos Bancada Técnica</a></li>
-            <li><a class="nav-link <?= isActive($currentPage, '/admin/premiacao_juri.php') ?>" href="/admin/premiacao_juri.php"><i class="bi bi-person-check"></i> Votos Juri</a></li>
-          <?php endif; ?>
+          <li><a class="nav-link <?= isActive($currentPage, '/admin/premiacao_edicoes.php') ?>" href="/admin/premiacao_edicoes.php"><i class="bi bi-calendar3"></i> Edições Premiação</a></li>
+          <li><a class="nav-link <?= isActive($currentPage, '/admin/premiacao_periodos.php') ?>" href="/admin/premiacao_periodos.php"><i class="bi bi-calendar3-range"></i> Periodo Premiação</a></li>
+          <li><a class="nav-link <?= isActive($currentPage, '/admin/premiacao_categorias.php') ?>" href="/admin/premiacao_categorias.php"><i class="bi bi-grid"></i> Categorias</a></li>
+          <li><a class="nav-link <?= isActive($currentPage, '/admin/premiacao_inscricoes.php') ?>" href="/admin/premiacao_inscricoes.php"><i class="bi bi-calendar-check"></i> Inscrições</a></li>
+          <li><a class="nav-link <?= isActive($currentPage, '/admin/premiacao_voto_popular.php') ?>" href="/admin/premiacao_voto_popular.php"><i class="bi bi-bar-chart-steps"></i> Votos Popular</a></li>
+          <li><a class="nav-link <?= isActive($currentPage, '/admin/premiacao_voto_tecnico.php') ?>" href="/admin/premiacao_voto_tecnico.php"><i class="bi bi-person-gear"></i> Votos Bancada Técnica</a></li>
+          <li><a class="nav-link <?= isActive($currentPage, '/admin/premiacao_juri.php') ?>" href="/admin/premiacao_juri.php"><i class="bi bi-person-check"></i> Votos Juri</a></li>
+          <li><a class="nav-link <?= isActive($currentPage, '/admin/premiacao_resultados.php') ?>" href="/admin/premiacao_resultados.php"><i class="bi bi-award"></i> Resultados</a></li>
         </ul>
       </div>
     </li>
@@ -216,6 +227,8 @@ function isJuriOuTecnica(): bool {
     </ul>
   <?php endif; ?>
 
+<?php endif; // fim isJuriOuTecnica ?>
+
   <div class="sidebar-footer">
     <i class="bi bi-droplet-fill me-1" style="color:var(--ip-lime);"></i>
     Impactos Positivos 2026
@@ -226,7 +239,6 @@ function isJuriOuTecnica(): bool {
 <main class="ip-main">
 
 <script>
-// Toggle sidebar mobile — inline para garantir execução imediata
 (function () {
   document.addEventListener('DOMContentLoaded', function () {
     var btn      = document.getElementById('sidebarToggle');
