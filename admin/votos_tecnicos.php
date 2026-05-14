@@ -21,13 +21,13 @@ try {
     $pdo = new PDO($dsn, $config['user'], $config['pass'], $opts);
 
     // ── Fase ativa para este role ─────────────────────────────────────────
-    $campoPerm = $role === 'juri' ? 'permite_voto_juri' : 'permite_voto_tecnico';
+    // Júri: usa permite_juri_final  |  Técnica: usa permite_voto_tecnico
+    $campoPerm = $role === 'juri' ? 'permite_juri_final' : 'permite_voto_tecnico';
     $stmtFase  = $pdo->prepare("
         SELECT pf.*
         FROM premiacao_fases pf
         WHERE pf.{$campoPerm} = 1
-          AND pf.data_inicio <= NOW()
-          AND pf.data_fim    >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+          AND pf.status IN ('em_andamento', 'agendada')
         ORDER BY
             CASE WHEN pf.status = 'em_andamento' THEN 0
                  WHEN pf.status = 'agendada'     THEN 1
@@ -38,16 +38,18 @@ try {
     $stmtFase->execute();
     $fase = $stmtFase->fetch() ?: null;
 
-    $agora       = time();
-    $faseAtiva   = false;
+    $agora         = time();
+    $faseAtiva     = false;
     $faseEncerrada = false;
-    $faseId      = 0;
-    $limiteVotos = 0;
+    $faseId        = 0;
+    $premiacaoId   = 0;
+    $limiteVotos   = 1; // júri vota 1 por categoria
 
     if ($fase) {
-        $faseId        = (int)$fase['id'];
-        $limiteVotos   = $role === 'juri'
-            ? (int)($fase['qtd_classificados_final']   ?: $fase['qtd_classificados_tecnica'] ?: 5)
+        $faseId      = (int)$fase['id'];
+        $premiacaoId = (int)$fase['premiacao_id'];
+        $limiteVotos = $role === 'juri'
+            ? 1
             : (int)($fase['qtd_classificados_tecnica'] ?: 5);
         $ini           = strtotime($fase['data_inicio']);
         $fim           = strtotime($fase['data_fim']);
@@ -61,7 +63,30 @@ try {
     $filtro_ods       = $_GET['ods']            ?? '';
     $filtro_eixo      = $_GET['eixo']           ?? '';
 
-    $where  = ['n.inscricao_completa = 1'];
+    // ── Query base: apenas negócios CLASSIFICADOS na fase ativa ───────────
+    // Usa premiacao_classificados que contém fase_id + negocio_id
+    if ($faseId > 0) {
+        $whereBase = 'cl.fase_id = ' . $faseId;
+        $fromBase  = '
+            FROM premiacao_classificados cl
+            INNER JOIN negocios n          ON n.id  = cl.negocio_id
+            INNER JOIN premiacao_categorias pc ON pc.id = cl.categoria_id
+            LEFT  JOIN scores_negocios s   ON n.id  = s.negocio_id
+            LEFT  JOIN ods o               ON o.id  = n.ods_prioritaria_id
+            LEFT  JOIN eixos_tematicos et  ON et.id = n.eixo_principal_id
+        ';
+    } else {
+        // Sem fase ativa: mostra vazio
+        $whereBase = '1 = 0';
+        $fromBase  = '
+            FROM negocios n
+            LEFT JOIN scores_negocios s  ON n.id = s.negocio_id
+            LEFT JOIN ods o              ON o.id = n.ods_prioritaria_id
+            LEFT JOIN eixos_tematicos et ON et.id = n.eixo_principal_id
+        ';
+    }
+
+    $where  = [$whereBase];
     $params = [];
 
     if ($filtro_nome !== '') {
@@ -69,7 +94,7 @@ try {
         $params[] = "%{$filtro_nome}%";
     }
     if ($filtro_categoria !== '') {
-        $where[]  = 'n.categoria = ?';
+        $where[]  = 'pc.nome = ?';
         $params[] = $filtro_categoria;
     }
     if ($filtro_ods !== '') {
@@ -84,9 +109,9 @@ try {
     $whereSQL = 'WHERE ' . implode(' AND ', $where);
 
     // Ordenação
-    $colunas_permitidas  = ['nome' => 'n.nome_fantasia', 'geral' => 's.score_geral'];
+    $colunas_permitidas  = ['nome' => 'n.nome_fantasia', 'geral' => 's.score_geral', 'posicao' => 'cl.posicao'];
     $direcoes_permitidas = ['ASC', 'DESC'];
-    $coluna_ordem  = $colunas_permitidas[$_GET['ordem'] ?? ''] ?? 'n.nome_fantasia';
+    $coluna_ordem  = $colunas_permitidas[$_GET['ordem'] ?? ''] ?? 'cl.posicao';
     $direcao_ordem = in_array(strtoupper($_GET['dir'] ?? ''), $direcoes_permitidas)
         ? strtoupper($_GET['dir'])
         : 'ASC';
@@ -96,14 +121,7 @@ try {
     $pagina_atual = max(1, (int)($_GET['pagina'] ?? 1));
     $offset       = ($pagina_atual - 1) * $por_pagina;
 
-    $sqlCount = "
-        SELECT COUNT(*)
-        FROM negocios n
-        LEFT JOIN scores_negocios s  ON n.id = s.negocio_id
-        LEFT JOIN ods o              ON o.id = n.ods_prioritaria_id
-        LEFT JOIN eixos_tematicos et ON et.id = n.eixo_principal_id
-        {$whereSQL}
-    ";
+    $sqlCount = "SELECT COUNT(*) {$fromBase} {$whereSQL}";
     $stmtCount = $pdo->prepare($sqlCount);
     $stmtCount->execute($params);
     $total_registros = (int)$stmtCount->fetchColumn();
@@ -113,7 +131,10 @@ try {
         SELECT
             n.id,
             n.nome_fantasia,
-            n.categoria,
+            pc.nome     AS categoria,
+            pc.id       AS categoria_id,
+            cl.posicao  AS posicao_classificado,
+            cl.origem   AS origem_classificado,
             s.score_geral,
             o.id        AS ods_id,
             o.n_ods     AS ods_numero,
@@ -121,10 +142,7 @@ try {
             o.icone_url AS ods_icone,
             et.id       AS eixo_id,
             et.nome     AS eixo_nome
-        FROM negocios n
-        LEFT JOIN scores_negocios s  ON n.id = s.negocio_id
-        LEFT JOIN ods o              ON o.id = n.ods_prioritaria_id
-        LEFT JOIN eixos_tematicos et ON et.id = n.eixo_principal_id
+        {$fromBase}
         {$whereSQL}
         ORDER BY {$coluna_ordem} {$direcao_ordem}
         LIMIT {$por_pagina} OFFSET {$offset}
@@ -135,21 +153,22 @@ try {
 
     // ── Votos já feitos por este usuário, agrupados por categoria ─────────
     $votosPorCategoria = [];
+    $negociosVotados   = [];
     if ($faseId && $userId) {
         $tabelaVotos = $role === 'juri' ? 'premiacao_votos_juri' : 'premiacao_votos_tecnicos';
         $stmtVotos = $pdo->prepare("
-            SELECT pc.nome AS categoria_nome, COUNT(*) AS total
+            SELECT pc2.nome AS categoria_nome, COUNT(*) AS total
             FROM {$tabelaVotos} v
-            JOIN premiacao_categorias pc ON pc.id = v.categoria_id
+            JOIN premiacao_categorias pc2 ON pc2.id = v.categoria_id
             WHERE v.fase_id = ? AND v.user_id = ?
-            GROUP BY pc.nome
+            GROUP BY pc2.nome
         ");
         $stmtVotos->execute([$faseId, $userId]);
         foreach ($stmtVotos->fetchAll() as $row) {
             $votosPorCategoria[$row['categoria_nome']] = (int)$row['total'];
         }
 
-        // Verifica voto individual por inscrição (negocio_id)
+        // IDs de negócios já votados (via inscricao_id → negocio_id)
         $stmtVotadosIds = $pdo->prepare("
             SELECT pi.negocio_id
             FROM {$tabelaVotos} v
@@ -158,32 +177,43 @@ try {
         ");
         $stmtVotadosIds->execute([$faseId, $userId]);
         $negociosVotados = array_flip($stmtVotadosIds->fetchAll(PDO::FETCH_COLUMN));
-    } else {
-        $negociosVotados = [];
     }
 
-    // ── Filtros select ─────────────────────────────────────────────────────
-    $categorias_disponiveis = $pdo->query(
-        "SELECT DISTINCT categoria FROM negocios
-         WHERE categoria IS NOT NULL AND categoria != '' AND inscricao_completa = 1
-         ORDER BY categoria"
-    )->fetchAll(PDO::FETCH_COLUMN);
+    // ── Filtros select (categorias disponíveis na fase) ────────────────────
+    $categorias_disponiveis = [];
+    if ($faseId > 0) {
+        $categorias_disponiveis = $pdo->prepare("
+            SELECT DISTINCT pc3.nome
+            FROM premiacao_classificados cl2
+            JOIN premiacao_categorias pc3 ON pc3.id = cl2.categoria_id
+            WHERE cl2.fase_id = ?
+            ORDER BY pc3.nome
+        ");
+        $categorias_disponiveis->execute([$faseId]);
+        $categorias_disponiveis = $categorias_disponiveis->fetchAll(PDO::FETCH_COLUMN);
+    }
 
-    $ods_disponiveis = $pdo->query(
-        "SELECT o.id, o.n_ods, o.nome, o.icone_url
-         FROM ods o
-         INNER JOIN negocios n ON n.ods_prioritaria_id = o.id AND n.inscricao_completa = 1
-         GROUP BY o.id, o.n_ods, o.nome, o.icone_url
-         ORDER BY o.n_ods ASC"
-    )->fetchAll();
+    $ods_disponiveis = $faseId > 0
+        ? $pdo->query("
+            SELECT DISTINCT o2.id, o2.n_ods, o2.nome, o2.icone_url
+            FROM premiacao_classificados cl3
+            JOIN negocios n2 ON n2.id = cl3.negocio_id
+            JOIN ods o2 ON o2.id = n2.ods_prioritaria_id
+            WHERE cl3.fase_id = {$faseId}
+            ORDER BY o2.n_ods ASC
+          ")->fetchAll()
+        : [];
 
-    $eixos_disponiveis = $pdo->query(
-        "SELECT et.id, et.nome
-         FROM eixos_tematicos et
-         INNER JOIN negocios n ON n.eixo_principal_id = et.id AND n.inscricao_completa = 1
-         GROUP BY et.id, et.nome
-         ORDER BY et.nome ASC"
-    )->fetchAll();
+    $eixos_disponiveis = $faseId > 0
+        ? $pdo->query("
+            SELECT DISTINCT et2.id, et2.nome
+            FROM premiacao_classificados cl4
+            JOIN negocios n3 ON n3.id = cl4.negocio_id
+            JOIN eixos_tematicos et2 ON et2.id = n3.eixo_principal_id
+            WHERE cl4.fase_id = {$faseId}
+            ORDER BY et2.nome ASC
+          ")->fetchAll()
+        : [];
 
     function linkOrd(string $col): string {
         $g = $_GET;
@@ -202,15 +232,14 @@ try {
 }
 
 // Labels dinâmicos conforme role
-$isjuri      = $role === 'juri';
-$titulo      = $isjuri ? 'Votação — Bancada de Júri'    : 'Votação — Bancada Técnica';
-$subtitulo   = $isjuri
-    ? 'Avalie e vote nos negócios inscritos como membro do júri.'
-    : 'Avalie e vote nos negócios inscritos como membro da bancada técnica.';
-$voto_url    = $isjuri ? '/premiacao/votar_juri.php' : '/premiacao/votar_tecnico.php';
-$voto_icon   = $isjuri ? 'bi-star-fill'     : 'bi-clipboard2-check-fill';
-$voto_label  = $isjuri ? 'Votar (Júri)'     : 'Votar (Técnica)';
-$campoLimite = $isjuri ? 'qtd_classificados_final' : 'qtd_classificados_tecnica';
+$isjuri     = $role === 'juri';
+$titulo     = $isjuri ? 'Votação — Bancada de Júri'    : 'Votação — Bancada Técnica';
+$subtitulo  = $isjuri
+    ? 'Avalie e vote nos negócios classificados como membro do júri.'
+    : 'Avalie e vote nos negócios classificados como membro da bancada técnica.';
+$voto_url   = $isjuri ? '/premiacao/votar_juri.php' : '/premiacao/votar_tecnico.php';
+$voto_icon  = $isjuri ? 'bi-star-fill'     : 'bi-clipboard2-check-fill';
+$voto_label = $isjuri ? 'Votar (Júri)'     : 'Votar (Técnica)';
 
 include __DIR__ . '/../app/views/admin/header.php';
 ?>
@@ -369,11 +398,17 @@ include __DIR__ . '/../app/views/admin/header.php';
   </form>
 </div>
 
-<?php if ($total_registros > 0): ?>
+<?php if ($faseId > 0 && $total_registros === 0 && empty($filtro_nome) && $filtro_categoria === '' && $filtro_ods === '' && $filtro_eixo === ''): ?>
+  <div class="alert alert-info">
+    <i class="bi bi-info-circle-fill me-2"></i>
+    Nenhum negócio classificado encontrado para esta fase.
+    Verifique se a apuração da fase anterior foi concluída.
+  </div>
+<?php elseif ($total_registros > 0): ?>
 <p class="text-muted small mb-2">
   Exibindo <strong><?= number_format(min($offset + 1, $total_registros)) ?></strong>
   a <strong><?= number_format(min($offset + $por_pagina, $total_registros)) ?></strong>
-  de <strong><?= number_format($total_registros) ?></strong> negócio(s) com inscrição concluída.
+  de <strong><?= number_format($total_registros) ?></strong> negócio(s) classificado(s) nesta fase.
 </p>
 <?php endif; ?>
 
@@ -393,8 +428,8 @@ include __DIR__ . '/../app/views/admin/header.php';
           <th>ODS Prioritária</th>
           <th>Eixo Temático</th>
           <th class="col-score text-center">
-            <a href="<?= linkOrd('geral') ?>" class="neg-sort-link">
-              Score Geral<?= iconOrd('geral') ?>
+            <a href="<?= linkOrd('posicao') ?>" class="neg-sort-link">
+              Posição<?= iconOrd('posicao') ?>
             </a>
           </th>
           <th class="col-acoes text-center">Ações</th>
@@ -412,6 +447,7 @@ include __DIR__ . '/../app/views/admin/header.php';
           <?php foreach ($negocios as $neg): ?>
             <?php
               $nid           = (int)$neg['id'];
+              $catId         = (int)$neg['categoria_id'];
               $ods_numero    = trim((string)($neg['ods_numero'] ?? ''));
               $ods_nome_val  = trim((string)($neg['ods_nome']   ?? ''));
               $ods_icone_val = trim((string)($neg['ods_icone']  ?? ''));
@@ -419,16 +455,15 @@ include __DIR__ . '/../app/views/admin/header.php';
               $categoria     = $neg['categoria'] ?? '';
 
               // Verifica se já votou neste negócio
-              $jaVotou       = isset($negociosVotados[$nid]);
+              $jaVotou = isset($negociosVotados[$nid]);
 
-              // Verifica se atingiu o limite para a categoria deste negócio
-              $votosNaCateg  = $votosPorCategoria[$categoria] ?? 0;
+              // Júri: 1 voto por categoria; técnica: limiteVotos por categoria
+              $votosNaCateg   = $votosPorCategoria[$categoria] ?? 0;
               $limiteAtingido = ($votosNaCateg >= $limiteVotos && $limiteVotos > 0);
 
               // Botão desabilitado quando: sem fase, fase encerrada, já votou ou limite atingido
               $btnDesabilitado = !$fase || !$faseAtiva || $jaVotou || $limiteAtingido;
 
-              // Tooltip explicativo
               if (!$fase || !$faseAtiva) {
                   $tooltip = $faseEncerrada ? 'Fase de votação encerrada' : 'Nenhuma fase de votação ativa';
               } elseif ($jaVotou) {
@@ -438,6 +473,12 @@ include __DIR__ . '/../app/views/admin/header.php';
               } else {
                   $tooltip = $voto_label;
               }
+
+              // Monta URL com categoria_id para o júri
+              $urlVoto = $voto_url
+                  . '?negocio_id=' . $nid
+                  . '&fase_id='    . $faseId
+                  . '&categoria_id=' . $catId;
             ?>
             <tr>
               <td class="col-id" style="color:#9aab9d; font-size:.78rem; font-family:monospace;">
@@ -451,9 +492,6 @@ include __DIR__ . '/../app/views/admin/header.php';
               <td class="col-cat">
                 <?php
                   $votosNaCat = $votosPorCategoria[$categoria] ?? 0;
-                  $catBadge   = $limiteVotos > 0
-                      ? " ({$votosNaCat}/{$limiteVotos})"
-                      : '';
                 ?>
                 <span class="neg-cat-badge">
                   <?= htmlspecialchars($categoria ?: '—') ?>
@@ -495,8 +533,11 @@ include __DIR__ . '/../app/views/admin/header.php';
               </td>
 
               <td class="col-score text-center">
-                <?php if ($neg['score_geral'] !== null): ?>
-                  <span class="neg-score-geral"><?= number_format((float)$neg['score_geral'], 1, ',', '') ?></span>
+                <?php if (!empty($neg['posicao_classificado'])): ?>
+                  <span class="neg-score-geral"><?= (int)$neg['posicao_classificado'] ?>°</span>
+                  <?php if (!empty($neg['origem_classificado'])): ?>
+                    <br><small class="text-muted" style="font-size:.7rem;"><?= htmlspecialchars($neg['origem_classificado']) ?></small>
+                  <?php endif; ?>
                 <?php else: ?>
                   <span style="color:#b0bdb3; font-size:.82rem;">—</span>
                 <?php endif; ?>
@@ -525,7 +566,7 @@ include __DIR__ . '/../app/views/admin/header.php';
                       <span><?= $jaVotou ? 'Já votou' : ($faseEncerrada ? 'Encerrado' : $voto_label) ?></span>
                     </button>
                   <?php else: ?>
-                    <a href="<?= $voto_url ?>?negocio_id=<?= $nid ?>&fase_id=<?= $faseId ?>"
+                    <a href="<?= $urlVoto ?>"
                        class="act-btn"
                        title="<?= htmlspecialchars($tooltip) ?>"
                        style="display:inline-flex;align-items:center;gap:.3rem;padding:.35rem .7rem;font-size:.78rem;white-space:nowrap;width:100%;justify-content:center;

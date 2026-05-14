@@ -1,19 +1,25 @@
 <?php
 // /premiacao/votar_juri.php — Endpoint POST para registrar voto do júri
-// ================================================================
-// ARQUIVO TEMPLATE - Precisa ser adaptado conforme sua autenticação
-// ================================================================
-// Na fase final, cada jurado vota UMA VEZ por categoria
-// Registra qual inscrição/negócio o jurado escolhe para vencer aquela categoria
+// Usa autenticação padrão do sistema ($_SESSION['user_role'] / $_SESSION['user_id'])
+// Júri vota 1 vez por categoria, escolhendo 1 negócio classificado.
 
 ob_start();
 session_start();
-
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
-require_once __DIR__ . '/../app/helpers/premiacao_auth.php';
+require_once __DIR__ . '/../app/helpers/auth.php';
 
 header('Content-Type: application/json; charset=utf-8');
+
+// ── Verificar autenticação via sessão padrão ──────────────────────────────────
+$role   = $_SESSION['user_role'] ?? '';
+$userId = (int)($_SESSION['user_id'] ?? 0);
+
+if (!$userId || $role !== 'juri') {
+    http_response_code(401);
+    echo json_encode(['ok' => false, 'erro' => 'Você precisa estar autenticado como jurado.']);
+    exit;
+}
 
 $config = require __DIR__ . '/../app/config/db.php';
 
@@ -22,8 +28,9 @@ try {
         "mysql:host={$config['host']};dbname={$config['dbname']};port={$config['port']};charset={$config['charset']}",
         $config['user'], $config['pass'],
         [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_EMULATE_PREPARES => false
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_EMULATE_PREPARES   => false,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         ]
     );
 } catch (PDOException $e) {
@@ -48,44 +55,34 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     jsonErro('Método não permitido.', 405);
 }
 
-// ── Verificar autenticação de jurado ──────────────────────────────────────────
-$actor = premiacao_current_actor();
-
-if (!$actor || $actor['tipo'] !== 'juri') {
-    jsonErro('Você precisa estar autenticado como jurado.', 401);
-}
-
-$juradoId = $actor['id'];
-
 // ── Extrair parâmetros ────────────────────────────────────────────────────────
-$inscricaoId = (int)($_POST['inscricao_id'] ?? 0);
+$negocioId   = (int)($_POST['negocio_id']   ?? 0);
 $faseId      = (int)($_POST['fase_id']      ?? 0);
 $categoriaId = (int)($_POST['categoria_id'] ?? 0);
 $redirect    = $_POST['redirect'] ?? null;
 
-// ── Whitelist de redirecionamento
-$redirectValidos = ['/premiacao/painel_juri.php', '/premiacao/votacao_final.php', '/premiacao.php'];
-$redirect = in_array($redirect, $redirectValidos, true) 
-    ? $redirect 
-    : '/premiacao/painel_juri.php';
+// Whitelist de redirecionamento
+$redirectValidos = ['/admin/votos_tecnicos.php', '/premiacao/painel_juri.php'];
+$redirect = in_array($redirect, $redirectValidos, true)
+    ? $redirect
+    : '/admin/votos_tecnicos.php';
 
-if ($inscricaoId <= 0 || $faseId <= 0 || $categoriaId <= 0) {
+if ($negocioId <= 0 || $faseId <= 0 || $categoriaId <= 0) {
     jsonErro('Dados inválidos.');
 }
 
 try {
-    // ── Valida fase: deve ser a FASE FINAL e permitir voto de júri ──────────────
+    // ── Valida fase: deve ter permite_juri_final = 1 e estar em_andamento ───
     $stmtFase = $pdo->prepare("
-        SELECT pf.id, pf.premiacao_id, pf.data_inicio, pf.data_fim, pf.tipo_fase
-        FROM premiacao_fases pf
-        WHERE pf.id = ?
-          AND pf.permite_juri_final = 1
-          AND pf.status = 'em_andamento'
-          AND pf.tipo_fase = 'final'
+        SELECT id, premiacao_id, data_inicio, data_fim
+        FROM premiacao_fases
+        WHERE id = ?
+          AND permite_juri_final = 1
+          AND status = 'em_andamento'
         LIMIT 1
     ");
     $stmtFase->execute([$faseId]);
-    $fase = $stmtFase->fetch(PDO::FETCH_ASSOC);
+    $fase = $stmtFase->fetch();
 
     if (!$fase) {
         jsonErro('Fase de votação do júri não encontrada ou encerrada.');
@@ -113,45 +110,53 @@ try {
         jsonErro('Categoria não encontrada.');
     }
 
-    // ── Valida inscrição ──────────────────────────────────────────────────────
-    // IMPORTANTE: A inscrição deve estar como FINALISTA (classificada nas fases anteriores)
-    // Ajustar status conforme sua definição de finalista
-    $stmtInsc = $pdo->prepare("
-        SELECT pi.id, pi.negocio_id, pi.categoria
-        FROM premiacao_inscricoes pi
-        WHERE pi.id = ?
-          AND pi.premiacao_id = ?
-          AND pi.status IN ('classificada_fase_2', 'finalista')
+    // ── Valida negócio classificado na fase ───────────────────────────────────
+    // Verifica na tabela premiacao_classificados (negocio_id + fase_id + categoria_id)
+    $stmtCl = $pdo->prepare("
+        SELECT cl.id
+        FROM premiacao_classificados cl
+        WHERE cl.negocio_id   = ?
+          AND cl.fase_id      = ?
+          AND cl.categoria_id = ?
         LIMIT 1
     ");
-    $stmtInsc->execute([$inscricaoId, $fase['premiacao_id']]);
-    $inscricao = $stmtInsc->fetch(PDO::FETCH_ASSOC);
+    $stmtCl->execute([$negocioId, $faseId, $categoriaId]);
+    $classificado = $stmtCl->fetch();
 
-    if (!$inscricao) {
-        jsonErro('Inscrição não encontrada ou negócio não é finalista.');
+    if (!$classificado) {
+        jsonErro('Negócio não está classificado nesta fase/categoria.');
     }
 
-    // ── Verifica voto duplicado ───────────────────────────────────────────────
-    // Um jurado só vota UMA VEZ por categoria, por fase
-    // A constraint usa (fase_id, categoria_id, user_id)
-    // Então um jurado pode votar em inscrições diferentes da mesma categoria? Não!
-    // Na fase final, cada jurado escolhe 1 vencedor por categoria
+    // ── Busca inscricao_id para registrar o voto ──────────────────────────────
+    $stmtInsc = $pdo->prepare("
+        SELECT pi.id
+        FROM premiacao_inscricoes pi
+        WHERE pi.negocio_id    = ?
+          AND pi.premiacao_id  = ?
+        LIMIT 1
+    ");
+    $stmtInsc->execute([$negocioId, $fase['premiacao_id']]);
+    $inscricao = $stmtInsc->fetch();
+
+    if (!$inscricao) {
+        jsonErro('Inscrição do negócio não encontrada.');
+    }
+
+    $inscricaoId = (int)$inscricao['id'];
+
+    // ── Verifica voto duplicado (1 voto por categoria por jurado) ─────────────
     $stmtDup = $pdo->prepare("
         SELECT COUNT(*) FROM premiacao_votos_juri
         WHERE fase_id      = ?
           AND categoria_id = ?
           AND user_id      = ?
     ");
-    $stmtDup->execute([$faseId, $categoriaId, $juradoId]);
+    $stmtDup->execute([$faseId, $categoriaId, $userId]);
     if ((int)$stmtDup->fetchColumn() > 0) {
-        jsonErro('Você já votou nesta categoria na fase final. Um voto por categoria.');
+        jsonErro('Você já votou nesta categoria. Um voto por categoria é permitido.');
     }
 
     // ── Registra o voto do júri ───────────────────────────────────────────────
-    // Nota: A tabela premiacao_votos_juri NÃO tem campo 'nota'
-    // Apenas registra qual inscrição o jurado escolhe
-    // A apuração final somará: 1 voto popular (ranking) + votos de cada jurado (1 voto por jurado)
-    
     $stmtInsert = $pdo->prepare("
         INSERT INTO premiacao_votos_juri
             (premiacao_id, fase_id, categoria_id, inscricao_id, user_id, created_at)
@@ -162,7 +167,7 @@ try {
         $faseId,
         $categoriaId,
         $inscricaoId,
-        $juradoId
+        $userId,
     ]);
 
     // ── Responde ──────────────────────────────────────────────────────────────
