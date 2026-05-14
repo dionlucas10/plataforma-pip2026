@@ -1,16 +1,12 @@
 <?php
-// /premiacao/votar_juri.php — Endpoint POST para registrar voto do júri
-// Aceita tanto application/json quanto multipart/form-data ou
-// application/x-www-form-urlencoded.
-// Autenticação: premiacao_auth.php (mesmo padrão de votar.php / votar_tecnico.php)
+// /premiacao/votar_juri.php — Endpoint para registrar voto do júri
+// Aceita POST (form) e JSON. Também aceita GET com parâmetros (redirect de servidor).
 
 ob_start();
 session_start();
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
-// IMPORTANTE: usa premiacao_auth, NÃO o auth.php genérico de admin
-// O auth.php genérico redireciona (GET) quem não é admin, corrompendo o POST.
 require_once __DIR__ . '/../app/helpers/premiacao_auth.php';
 
 header('Content-Type: application/json; charset=utf-8');
@@ -28,49 +24,84 @@ function jsonOk(string $msg, array $extra = []): never {
     exit;
 }
 
-// ── Só aceita POST ───────────────────────────────────────────────────────────
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+// ── Aceita POST ou GET (GET pode ocorrer por redirect 301 do servidor) ──────
+$method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+$contentType = strtolower($_SERVER['CONTENT_TYPE'] ?? '');
+
+// Extrai parâmetros tanto de POST quanto de GET quanto de JSON body
+if (str_contains($contentType, 'application/json')) {
+    $body        = json_decode(file_get_contents('php://input'), true) ?? [];
+    $negocioId   = (int)($body['negocio_id']   ?? 0);
+    $faseId      = (int)($body['fase_id']       ?? 0);
+    $categoriaId = (int)($body['categoria_id']  ?? 0);
+    $redirect    = $body['redirect'] ?? null;
+} elseif ($method === 'POST') {
+    $negocioId   = (int)($_POST['negocio_id']   ?? 0);
+    $faseId      = (int)($_POST['fase_id']      ?? 0);
+    $categoriaId = (int)($_POST['categoria_id'] ?? 0);
+    $redirect    = $_POST['redirect'] ?? null;
+} else {
+    // GET: pode vir por redirect 301/302 do servidor web
+    $negocioId   = (int)($_GET['negocio_id']   ?? 0);
+    $faseId      = (int)($_GET['fase_id']      ?? 0);
+    $categoriaId = (int)($_GET['categoria_id'] ?? 0);
+    $redirect    = $_GET['redirect'] ?? null;
+}
+
+// Se não há parâmetros válidos, retorna erro de método (origem real do bug)
+if ($negocioId <= 0 && $faseId <= 0) {
     jsonErro('Método não permitido.', 405);
 }
 
-// ── Autenticação via premiacao_auth ──────────────────────────────────────
-// premiacao_current_actor() retorna o actor da sessão sem redirecionar,
-// permitindo que a verificação de role seja feita aqui com resposta JSON.
-$actor = premiacao_current_actor();
+$isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH'])
+       && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+$isJson      = str_contains($contentType, 'application/json');
+$respondJson = $isAjax || $isJson;
 
-// Aceita júri de ambos os contextos (admin ou frontend com role juri)
-$autorizado = false;
+// Whitelist de redirecionamento
+$redirectValidos = ['/admin/votos_tecnicos.php', '/premiacao/painel_juri.php'];
+$redirect = in_array($redirect, $redirectValidos, true)
+    ? $redirect
+    : '/admin/votos_tecnicos.php';
+
+// ── Autenticação ─────────────────────────────────────────────────────────
+$actor  = premiacao_current_actor();
+$userId = null;
+
 if ($actor) {
-    if ($actor['contexto'] === 'admin') {
-        // Admin autenticado: sempre pode registrar voto de júri
-        $autorizado = true;
-        $userId     = (int)$actor['id'];
-    } elseif ($actor['contexto'] === 'frontend' && ($actor['role'] ?? '') === 'juri') {
-        // Empreendedor/usuário frontend com role juri
-        $autorizado = true;
-        $userId     = (int)$actor['id'];
+    $contexto = $actor['contexto'] ?? '';
+    $tipo     = $actor['tipo']     ?? '';
+    $role     = $actor['role']     ?? '';
+
+    // 'backend' = tecnico ou juri; 'admin' = administrador
+    if (
+        $contexto === 'backend' && in_array($tipo, ['juri'], true)
+        || $contexto === 'admin'
+        || ($contexto === 'backend' && $role === 'juri')
+        || ($contexto === 'backend' && $tipo === 'admin_user')
+    ) {
+        $userId = (int)$actor['id'];
     }
 }
 
-// Fallback: verifica sessão padrão do admin (user_role + user_id)
-if (!$autorizado) {
-    $roleSession = $_SESSION['user_role'] ?? '';
-    $userIdSession = (int)($_SESSION['user_id'] ?? 0);
-    if ($userIdSession > 0 && in_array($roleSession, ['juri', 'admin', 'superadmin'], true)) {
-        $autorizado = true;
-        $userId     = $userIdSession;
+// Fallback: sessão padrão do admin/juri
+if ($userId === null) {
+    $roleSession = strtolower(trim((string)($_SESSION['user_role'] ?? '')));
+    $uidSession  = (int)($_SESSION['user_id'] ?? 0);
+    if ($uidSession > 0 && in_array($roleSession, ['juri', 'admin', 'superadmin'], true)) {
+        $userId = $uidSession;
     }
 }
 
-if (!$autorizado) {
+if ($userId === null) {
     jsonErro('Você precisa estar autenticado como jurado.', 401);
 }
 
-// ── Conexão com banco ──────────────────────────────────────────────────
-if (!isset($userId)) {
-    jsonErro('Usuário não identificado.', 401);
+if ($negocioId <= 0 || $faseId <= 0 || $categoriaId <= 0) {
+    jsonErro('Dados inválidos. Informe negocio_id, fase_id e categoria_id.');
 }
 
+// ── Conexão com banco ──────────────────────────────────────────────────
 $config = require __DIR__ . '/../app/config/db.php';
 try {
     $pdo = new PDO(
@@ -86,38 +117,8 @@ try {
     jsonErro('Erro na conexão com banco de dados.', 500);
 }
 
-// ── Extrair parâmetros (POST form ou JSON body) ─────────────────────────
-$contentType = $_SERVER['CONTENT_TYPE'] ?? '';
-if (str_contains($contentType, 'application/json')) {
-    $body        = json_decode(file_get_contents('php://input'), true) ?? [];
-    $negocioId   = (int)($body['negocio_id']   ?? 0);
-    $faseId      = (int)($body['fase_id']       ?? 0);
-    $categoriaId = (int)($body['categoria_id']  ?? 0);
-    $redirect    = $body['redirect'] ?? null;
-} else {
-    $negocioId   = (int)($_POST['negocio_id']   ?? 0);
-    $faseId      = (int)($_POST['fase_id']      ?? 0);
-    $categoriaId = (int)($_POST['categoria_id'] ?? 0);
-    $redirect    = $_POST['redirect'] ?? null;
-}
-
-$isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH'])
-       && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
-$isJson = str_contains($contentType, 'application/json');
-$respondJson = $isAjax || $isJson;
-
-// Whitelist de redirecionamento
-$redirectValidos = ['/admin/votos_tecnicos.php', '/premiacao/painel_juri.php'];
-$redirect = in_array($redirect, $redirectValidos, true)
-    ? $redirect
-    : '/admin/votos_tecnicos.php';
-
-if ($negocioId <= 0 || $faseId <= 0 || $categoriaId <= 0) {
-    jsonErro('Dados inválidos. Informe negocio_id, fase_id e categoria_id.');
-}
-
 try {
-    // ── Valida fase: deve ter permite_juri_final = 1 e estar em_andamento ───
+    // ── Valida fase ─────────────────────────────────────────────────────────
     $stmtFase = $pdo->prepare("
         SELECT id, premiacao_id, data_inicio, data_fim
         FROM premiacao_fases
@@ -143,7 +144,7 @@ try {
         jsonErro('O período de votação do júri não está aberto no momento.');
     }
 
-    // ── Valida categoria ──────────────────────────────────────────────
+    // ── Valida categoria ─────────────────────────────────────────────
     $stmtCat = $pdo->prepare("
         SELECT id FROM premiacao_categorias
         WHERE id = ? AND premiacao_id = ?
@@ -183,7 +184,7 @@ try {
 
     $inscricaoId = (int)$inscricao['id'];
 
-    // ── Verifica voto duplicado (1 voto por categoria por jurado) ─────────
+    // ── Verifica voto duplicado ─────────────────────────────────────────
     $stmtDup = $pdo->prepare("
         SELECT COUNT(*) FROM premiacao_votos_juri
         WHERE fase_id = ? AND categoria_id = ? AND user_id = ?
