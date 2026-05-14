@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // redireciona conforme role
                     $role = $user['role'];
                     if (in_array($role, ['juri', 'tecnica'], true)) {
-                        header('Location: /admin/negocios.php');
+                        header('Location: /admin/votos_tecnicos.php');
                     } else {
                         header('Location: /admin/dashboard.php');
                     }
