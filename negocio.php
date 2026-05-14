@@ -181,13 +181,22 @@ if ($dadosVot) {
 <div class="negocio-publico-page py-4 py-md-5">
     <div class="container">
         <section class="negocio-publico-header card border-0 shadow-sm overflow-hidden">
-            <div class="negocio-publico-cover <?= !empty($apresentacao['imagem_destaque']) ? '' : 'bg-secondary' ?>">
+            <div class="negocio-publico-cover <?= !empty($apresentacao['imagem_destaque']) ? '' : 'negocio-publico-cover--padrao' ?>">
                 <?php if (!empty($apresentacao['imagem_destaque'])): ?>
                     <img
                         src="<?= htmlspecialchars($apresentacao['imagem_destaque']) ?>"
                         alt="Capa do negócio <?= htmlspecialchars($negocio['nome_fantasia']) ?>"
                         class="negocio-publico-cover-img"
                     >
+                <?php else: ?>
+                    <div class="negocio-publico-cover-fallback">
+                        <img
+                            src="/assets/images/moldura.png"
+                            alt="Imagem padrão"
+                            class="negocio-publico-cover-moldura"
+                        >
+                        <p class="negocio-publico-cover-texto">Juntos, ampliamos o que o mundo tem de melhor</p>
+                    </div>
                 <?php endif; ?>
             </div>
 
