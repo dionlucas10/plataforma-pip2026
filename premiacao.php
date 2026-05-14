@@ -71,26 +71,47 @@ if ($faseAtiva) {
 }
 $votacaoAberta = $faseAtiva && $votacaoAbertaPorData;
 
-function buildStatusPoolPublic(?array $fase): string
+/**
+ * Retorna a lista de status válidos para exibir negócios na vitrine pública.
+ * IMPORTANTE: os status no banco são normalizados (sem underscore intermediário),
+ * ex: 'classificadafase1', 'classificadafase2' — ver normalizarStatusPremiacao().
+ * Quando não há fase ativa, exibimos todos os status que indicam participação ativa.
+ */
+function buildStatusPoolPublic(?array $fase): array
 {
-    if (!$fase) return "'elegivel'";
+    // Pool base: sempre mostramos elegíveis e classificados em todas as fases
+    $poolBase = [
+        'elegivel',
+        'classificadafase1',
+        'classificadafase2',
+        'finalista',
+        'vencedora',
+    ];
+
+    if (!$fase) {
+        // Sem fase ativa: mostra todos os negócios com inscrição ativa/aprovada
+        return array_merge($poolBase, ['enviada', 'emtriagem']);
+    }
+
     $tipo   = $fase['tipo_fase'] ?? 'classificatoria';
     $rodada = (int)($fase['rodada'] ?? 1);
+
     if ($tipo === 'final') {
-        return "'finalista','classificada_fase_2'";
+        return ['finalista', 'classificadafase2', 'vencedora'];
     }
+
     if ($rodada <= 1) {
-        return "'elegivel'";
+        return ['elegivel'];
     }
-    $pool = ["'elegivel'"];
+
+    $pool = ['elegivel'];
     for ($i = 1; $i < $rodada; $i++) {
-        $pool[] = "'classificada_fase_{$i}'";
+        $pool[] = "classificadafase{$i}";
     }
-    return implode(',', $pool);
+    return $pool;
 }
 
-$statusPool    = buildStatusPoolPublic($faseAtiva);
-$statusPoolArr = array_unique(array_map('trim', explode(',', str_replace("'", '', $statusPool))));
+$statusPoolArr = buildStatusPoolPublic($faseAtiva);
 $statusPoolIn  = implode(',', array_map(fn($s) => "'$s'", $statusPoolArr));
 
 // ── Actor unificado ──────────────────────────────────────────────────────────────
@@ -115,6 +136,9 @@ if ($usuarioLogado && $faseAtiva && $usuarioId) {
 }
 
 // ── 4. Negócios inscritos e elegíveis ──────────────────────────────────
+// NOTA: removemos o filtro n.publicado_vitrine = 1 da condição obrigatória
+// e tornamos-o um critério de ordenação/preferência, para não ocultar negócios
+// inscritos que ainda não foram marcados como publicados na vitrine.
 $sql = "
     SELECT
         n.id, n.nome_fantasia, n.categoria, n.municipio, n.estado,
@@ -122,6 +146,7 @@ $sql = "
         o.icone_url,
         e.nome AS eixo_tematico_nome,
         pi.id  AS inscricao_id,
+        n.publicado_vitrine,
         (
             SELECT COUNT(*)
             FROM premiacao_votos_populares pvp2
@@ -136,7 +161,7 @@ $sql = "
     LEFT JOIN negocio_apresentacao a  ON a.negocio_id = n.id
     LEFT JOIN ods o                   ON o.id = n.ods_prioritaria_id
     LEFT JOIN eixos_tematicos e       ON e.id = n.eixo_principal_id
-    WHERE n.publicado_vitrine = 1
+    WHERE 1=1
 ";
 $params = [
     ':pid'       => $premiacaoId,
@@ -149,7 +174,8 @@ if (!empty($_GET['municipio'])) { $sql .= " AND n.municipio = :municipio";     $
 if (!empty($_GET['eixo']))      { $sql .= " AND n.eixo_principal_id = :eixo"; $params[':eixo']      = $_GET['eixo'];      }
 if (!empty($_GET['ods']))       { $sql .= " AND n.ods_prioritaria_id = :ods"; $params[':ods']       = $_GET['ods'];       }
 
-$sql .= " ORDER BY n.nome_fantasia";
+// Ordena: publicados na vitrine primeiro, depois pelo nome
+$sql .= " ORDER BY n.publicado_vitrine DESC, n.nome_fantasia";
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $negocios = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -159,18 +185,18 @@ $qBase = "
     FROM negocios n
     INNER JOIN premiacao_inscricoes pi
         ON pi.negocio_id = n.id AND pi.premiacao_id = ? AND pi.status IN ($statusPoolIn)
-    WHERE n.publicado_vitrine = 1
+    WHERE 1=1
 ";
 
-$categorias = $pdo->prepare("SELECT DISTINCT n.categoria $qBase ORDER BY n.categoria");
+$categorias = $pdo->prepare("SELECT DISTINCT n.categoria $qBase AND n.categoria IS NOT NULL AND n.categoria <> '' ORDER BY n.categoria");
 $categorias->execute([$premiacaoId]);
 $categorias = $categorias->fetchAll(PDO::FETCH_COLUMN);
 
-$estados = $pdo->prepare("SELECT DISTINCT n.estado $qBase ORDER BY n.estado");
+$estados = $pdo->prepare("SELECT DISTINCT n.estado $qBase AND n.estado IS NOT NULL AND n.estado <> '' ORDER BY n.estado");
 $estados->execute([$premiacaoId]);
 $estados = $estados->fetchAll(PDO::FETCH_COLUMN);
 
-$municipios = $pdo->prepare("SELECT DISTINCT n.municipio $qBase ORDER BY n.municipio");
+$municipios = $pdo->prepare("SELECT DISTINCT n.municipio $qBase AND n.municipio IS NOT NULL AND n.municipio <> '' ORDER BY n.municipio");
 $municipios->execute([$premiacaoId]);
 $municipios = $municipios->fetchAll(PDO::FETCH_COLUMN);
 
@@ -180,7 +206,7 @@ $ods = $pdo->prepare("
     INNER JOIN premiacao_inscricoes pi
         ON pi.negocio_id = n.id AND pi.premiacao_id = ? AND pi.status IN ($statusPoolIn)
     INNER JOIN ods o ON o.id = n.ods_prioritaria_id
-    WHERE n.publicado_vitrine = 1
+    WHERE 1=1
     ORDER BY o.id
 ");
 $ods->execute([$premiacaoId]);
@@ -192,7 +218,7 @@ $eixos = $pdo->prepare("
     INNER JOIN premiacao_inscricoes pi
         ON pi.negocio_id = n.id AND pi.premiacao_id = ? AND pi.status IN ($statusPoolIn)
     INNER JOIN eixos_tematicos et ON et.id = n.eixo_principal_id
-    WHERE n.publicado_vitrine = 1
+    WHERE 1=1
     ORDER BY et.nome
 ");
 $eixos->execute([$premiacaoId]);
