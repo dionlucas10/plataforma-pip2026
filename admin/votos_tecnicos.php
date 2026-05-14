@@ -65,9 +65,6 @@ try {
     $filtro_eixo      = (string)($_GET['eixo']      ?? '');
 
     // ── Query base ────────────────────────────────────────────────────────────
-    // Fase final  : usa premiacao_inscricoes diretamente (classificados não tem dados)
-    // Classificatória: usa premiacao_classificados + LEFT JOIN premiacao_inscricoes
-    //                  para ter inscricao_id disponível no SELECT e na URL de voto.
     if ($faseId > 0 && $isFaseFinal) {
 
         $whereBase = "pi.premiacao_id = {$premiacaoId}
@@ -92,8 +89,6 @@ try {
 
         $whereBase = "cl.fase_id = {$faseId}";
 
-        // IMPORTANTE: LEFT JOIN premiacao_inscricoes para ter pi.id (inscricao_id)
-        // necessário para a URL de voto e para COALESCE(pc.nome, pi.categoria)
         $fromBase = "
             FROM premiacao_classificados cl
             INNER JOIN negocios n         ON n.id = cl.negocio_id
@@ -145,7 +140,6 @@ try {
 
     $whereSQL = 'WHERE ' . implode(' AND ', $where);
 
-    // Ordenação
     $colunas_permitidas = ['nome' => 'n.nome_fantasia', 'categoria' => 'pc.nome'];
     if (!$isFaseFinal) {
         $colunas_permitidas['posicao'] = 'cl.posicao';
@@ -161,12 +155,10 @@ try {
         $orderSQL = $ordemPadrao;
     }
 
-    // Paginação
     $por_pagina   = 50;
     $pagina_atual = max(1, (int)($_GET['pagina'] ?? 1));
     $offset       = ($pagina_atual - 1) * $por_pagina;
 
-    // COUNT sem FROM duplicado — $fromBase já começa com FROM
     $sqlCount = "SELECT COUNT(*) {$fromBase} {$whereSQL}";
     $stmtCount = $pdo->prepare($sqlCount);
     $stmtCount->execute($params);
@@ -198,9 +190,9 @@ try {
     $stmt->execute($params);
     $negocios = $stmt->fetchAll();
 
-    // ── Votos já feitos por este usuário ──────────────────────────────────────
+    // ── Votos já feitos ───────────────────────────────────────────────────────────
     $votosPorCategoria = [];
-    $inscricoesVotadas = []; // chave: inscricao_id
+    $inscricoesVotadas = [];
     if ($faseId && $userId) {
         $tabelaVotos = ($role === 'juri') ? 'premiacao_votos_juri' : 'premiacao_votos_tecnicos';
 
@@ -216,23 +208,20 @@ try {
             $votosPorCategoria[$row['categoria_nome']] = (int)$row['total'];
         }
 
-        // Checa por inscricao_id (mais preciso que negocio_id)
         $stmtVotadosIds = $pdo->prepare("
-            SELECT inscricao_id
-            FROM {$tabelaVotos}
+            SELECT inscricao_id FROM {$tabelaVotos}
             WHERE fase_id = ? AND user_id = ?
         ");
         $stmtVotadosIds->execute([$faseId, $userId]);
         $inscricoesVotadas = array_flip($stmtVotadosIds->fetchAll(PDO::FETCH_COLUMN));
     }
 
-    // ── Filtros select (dropdown) ──────────────────────────────────────────────
+    // ── Dropdowns de filtro ────────────────────────────────────────────────────
     $categorias_disponiveis = [];
     $ods_disponiveis        = [];
     $eixos_disponiveis      = [];
 
     if ($faseId > 0 && $isFaseFinal) {
-
         $stmtCats = $pdo->prepare("
             SELECT DISTINCT pc3.nome
             FROM premiacao_inscricoes pi3
@@ -251,8 +240,7 @@ try {
             FROM premiacao_inscricoes pi4
             JOIN negocios n4 ON n4.id = pi4.negocio_id
             JOIN ods o2 ON o2.id = n4.ods_prioritaria_id
-            WHERE pi4.premiacao_id = ?
-              AND pi4.status IN ('classificada_fase2','finalista','vencedora')
+            WHERE pi4.premiacao_id = ? AND pi4.status IN ('classificada_fase2','finalista','vencedora')
             ORDER BY o2.n_ods ASC
         ");
         $stmtOds->execute([$premiacaoId]);
@@ -263,21 +251,18 @@ try {
             FROM premiacao_inscricoes pi5
             JOIN negocios n5 ON n5.id = pi5.negocio_id
             JOIN eixos_tematicos et2 ON et2.id = n5.eixo_principal_id
-            WHERE pi5.premiacao_id = ?
-              AND pi5.status IN ('classificada_fase2','finalista','vencedora')
+            WHERE pi5.premiacao_id = ? AND pi5.status IN ('classificada_fase2','finalista','vencedora')
             ORDER BY et2.nome ASC
         ");
         $stmtEixos->execute([$premiacaoId]);
         $eixos_disponiveis = $stmtEixos->fetchAll();
 
     } elseif ($faseId > 0) {
-
         $stmtCats = $pdo->prepare("
             SELECT DISTINCT pc3.nome
             FROM premiacao_classificados cl2
             JOIN premiacao_categorias pc3 ON pc3.id = cl2.categoria_id
-            WHERE cl2.fase_id = ?
-            ORDER BY pc3.nome
+            WHERE cl2.fase_id = ? ORDER BY pc3.nome
         ");
         $stmtCats->execute([$faseId]);
         $categorias_disponiveis = $stmtCats->fetchAll(PDO::FETCH_COLUMN);
@@ -287,8 +272,7 @@ try {
             FROM premiacao_classificados cl3
             JOIN negocios n2 ON n2.id = cl3.negocio_id
             JOIN ods o2 ON o2.id = n2.ods_prioritaria_id
-            WHERE cl3.fase_id = ?
-            ORDER BY o2.n_ods ASC
+            WHERE cl3.fase_id = ? ORDER BY o2.n_ods ASC
         ");
         $stmtOds->execute([$faseId]);
         $ods_disponiveis = $stmtOds->fetchAll();
@@ -298,8 +282,7 @@ try {
             FROM premiacao_classificados cl4
             JOIN negocios n3 ON n3.id = cl4.negocio_id
             JOIN eixos_tematicos et2 ON et2.id = n3.eixo_principal_id
-            WHERE cl4.fase_id = ?
-            ORDER BY et2.nome ASC
+            WHERE cl4.fase_id = ? ORDER BY et2.nome ASC
         ");
         $stmtEixos->execute([$faseId]);
         $eixos_disponiveis = $stmtEixos->fetchAll();
@@ -511,7 +494,6 @@ include __DIR__ . '/../app/views/admin/header.php';
               $tem_ods       = ($neg['ods_id'] ?? null) !== null;
               $categoria     = (string)($neg['categoria'] ?? '');
 
-              // jaVotou verifica por inscricao_id (preciso) com fallback por negocio_id
               $jaVotou        = isset($inscricoesVotadas[$inscricaoId]) && $inscricaoId > 0;
               $votosNaCateg   = $votosPorCategoria[$categoria] ?? 0;
               $limiteAtingido = ($limiteVotos > 0 && $votosNaCateg >= $limiteVotos);
@@ -526,13 +508,6 @@ include __DIR__ . '/../app/views/admin/header.php';
               } else {
                   $tooltip = $voto_label;
               }
-
-              // URL usa inscricao_id (esperado por votar_tecnico.php e votar_juri.php)
-              $urlVoto = $voto_url
-                  . '?inscricao_id=' . $inscricaoId
-                  . '&fase_id='      . $faseId
-                  . '&categoria_id=' . $catId
-                  . '&redirect='     . urlencode('/admin/votos_tecnicos.php');
             ?>
             <tr>
               <td class="col-id" style="color:#9aab9d; font-size:.78rem; font-family:monospace;">#<?= $nid ?></td>
@@ -578,10 +553,12 @@ include __DIR__ . '/../app/views/admin/header.php';
               </td>
               <td class="col-acoes text-center">
                 <div style="display:flex;flex-direction:column;align-items:center;gap:.4rem;">
+
                   <a href="/admin/visualizar_negocio.php?id=<?= $nid ?>" class="act-btn edit" title="Visualizar detalhes"
                      style="display:inline-flex;align-items:center;gap:.3rem;padding:.35rem .7rem;font-size:.78rem;white-space:nowrap;width:100%;justify-content:center;">
                     <i class="bi bi-eye"></i><span>Ver Detalhes</span>
                   </a>
+
                   <?php if ($btnDesabilitado): ?>
                     <button type="button" class="act-btn" title="<?= htmlspecialchars($tooltip) ?>" disabled
                             style="display:inline-flex;align-items:center;gap:.3rem;padding:.35rem .7rem;font-size:.78rem;white-space:nowrap;width:100%;justify-content:center;opacity:.45;cursor:not-allowed;
@@ -590,12 +567,24 @@ include __DIR__ . '/../app/views/admin/header.php';
                       <span><?= $jaVotou ? 'Já votou' : ($faseEncerrada ? 'Encerrado' : $voto_label) ?></span>
                     </button>
                   <?php else: ?>
-                    <a href="<?= $urlVoto ?>" class="act-btn" title="<?= htmlspecialchars($tooltip) ?>"
-                       style="display:inline-flex;align-items:center;gap:.3rem;padding:.35rem .7rem;font-size:.78rem;white-space:nowrap;width:100%;justify-content:center;
-                       <?= $isjuri ? 'background:rgba(111,66,193,.12);color:#6f42c1;' : 'background:rgba(3,105,161,.12);color:#0369a1;' ?>">
-                      <i class="bi <?= $voto_icon ?>"></i><span><?= htmlspecialchars($voto_label) ?></span>
-                    </a>
+                    <?php
+                      // FORM POST — votar_juri.php e votar_tecnico.php só aceitam POST
+                      $btnStyle = $isjuri
+                          ? 'background:rgba(111,66,193,.12);color:#6f42c1;'
+                          : 'background:rgba(3,105,161,.12);color:#0369a1;';
+                    ?>
+                    <form method="POST" action="<?= htmlspecialchars($voto_url) ?>" style="width:100%;margin:0;">
+                      <input type="hidden" name="inscricao_id" value="<?= $inscricaoId ?>">
+                      <input type="hidden" name="fase_id"      value="<?= $faseId ?>">
+                      <input type="hidden" name="categoria_id" value="<?= $catId ?>">
+                      <input type="hidden" name="redirect"     value="/admin/votos_tecnicos.php">
+                      <button type="submit" class="act-btn" title="<?= htmlspecialchars($tooltip) ?>"
+                              style="display:inline-flex;align-items:center;gap:.3rem;padding:.35rem .7rem;font-size:.78rem;white-space:nowrap;width:100%;justify-content:center;cursor:pointer;border:none;<?= $btnStyle ?>">
+                        <i class="bi <?= $voto_icon ?>"></i><span><?= htmlspecialchars($voto_label) ?></span>
+                      </button>
+                    </form>
                   <?php endif; ?>
+
                 </div>
               </td>
             </tr>
