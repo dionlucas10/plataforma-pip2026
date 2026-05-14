@@ -26,13 +26,21 @@ $stmtGrid = $pdo->query("
     LIMIT 6
 ");
 $negociosGrid = $stmtGrid->fetchAll();
+
+// Mapeamento de categoria → ícone PNG
+$iconesCat = [
+    'Ideação'       => '/assets/image/icons/ideacao.png',
+    'Operação'      => '/assets/image/icons/operacao.png',
+    'Tração/Escala' => '/assets/image/icons/tracao.png',
+    'Dinamizador'   => '/assets/image/icons/dinamizadores.png',
+];
 ?>
 
 <div class="row g-4">
     <?php foreach ($negociosGrid as $n):
-        $cores  = ['Ideação'=>'#f59e0b','Operação'=>'#3b82f6','Tração/Escala'=>'#16a34a','Dinamizador'=>'#9333ea'];
-        $corCat = $cores[$n['categoria']] ?? '#1E3425';
-        $local  = trim(($n['municipio'] ?? '') . ' / ' . ($n['estado'] ?? ''), ' /');
+        $local    = trim(($n['municipio'] ?? '') . ' / ' . ($n['estado'] ?? ''), ' /');
+        $cat      = $n['categoria'] ?? '';
+        $iconeCat = $iconesCat[$cat] ?? null;
     ?>
         <div class="col-12 col-md-6 col-xl-4">
             <article class="vitrine-card h-100">
@@ -58,10 +66,15 @@ $negociosGrid = $stmtGrid->fetchAll();
                             </div>
                         <?php endif; ?>
 
-                        <?php if (!empty($n['categoria'])): ?>
-                            <span class="vitrine-card-categoria"
-                                  style="--categoria-cor:<?= $corCat ?>;">
-                                <?= htmlspecialchars($n['categoria']) ?>
+                        <!-- Badge de categoria minimalista com ícone PNG -->
+                        <?php if ($cat !== ''): ?>
+                            <span class="vitrine-card-categoria-badge">
+                                <?php if ($iconeCat): ?>
+                                    <img src="<?= htmlspecialchars($iconeCat) ?>"
+                                         alt="<?= htmlspecialchars($cat) ?>"
+                                         class="vitrine-cat-icon">
+                                <?php endif; ?>
+                                <?= htmlspecialchars($cat) ?>
                             </span>
                         <?php endif; ?>
                     </div>
