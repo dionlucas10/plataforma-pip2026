@@ -48,7 +48,6 @@ try {
     if ($fase) {
         $faseId      = (int)$fase['id'];
         $premiacaoId = (int)$fase['premiacao_id'];
-        // isFaseFinal: fase onde o júri vota (permite_juri_final = 1)
         $isFaseFinal = ((int)($fase['permite_juri_final'] ?? 0) === 1);
         $limiteVotos = ($role === 'juri')
             ? 1
@@ -65,12 +64,10 @@ try {
     $filtro_ods       = (string)($_GET['ods']       ?? '');
     $filtro_eixo      = (string)($_GET['eixo']      ?? '');
 
-    // ── Query base ───────────────────────────────────────────────────────────────
-    //
-    // Fase final: finalistas em premiacao_inscricoes (status classificada_fase2)
-    //             A tabela premiacao_classificados NAO tem dados desta fase.
-    // Fases classificatórias: usa premiacao_classificados com fase_id.
-    //
+    // ── Query base ────────────────────────────────────────────────────────────
+    // Fase final  : usa premiacao_inscricoes diretamente (classificados não tem dados)
+    // Classificatória: usa premiacao_classificados + LEFT JOIN premiacao_inscricoes
+    //                  para ter inscricao_id disponível no SELECT e na URL de voto.
     if ($faseId > 0 && $isFaseFinal) {
 
         $whereBase = "pi.premiacao_id = {$premiacaoId}
@@ -95,10 +92,14 @@ try {
 
         $whereBase = "cl.fase_id = {$faseId}";
 
+        // IMPORTANTE: LEFT JOIN premiacao_inscricoes para ter pi.id (inscricao_id)
+        // necessário para a URL de voto e para COALESCE(pc.nome, pi.categoria)
         $fromBase = "
             FROM premiacao_classificados cl
-            INNER JOIN negocios n ON n.id = cl.negocio_id
+            INNER JOIN negocios n         ON n.id = cl.negocio_id
             INNER JOIN premiacao_categorias pc ON pc.id = cl.categoria_id
+            LEFT JOIN premiacao_inscricoes pi
+                ON pi.negocio_id = n.id AND pi.premiacao_id = {$premiacaoId}
             LEFT JOIN scores_negocios s  ON s.negocio_id = n.id
             LEFT JOIN ods o              ON o.id = n.ods_prioritaria_id
             LEFT JOIN eixos_tematicos et ON et.id = n.eixo_principal_id
@@ -112,10 +113,11 @@ try {
 
         $whereBase   = '1 = 0';
         $fromBase    = 'FROM negocios n
-            LEFT JOIN premiacao_categorias pc ON 1 = 0
-            LEFT JOIN scores_negocios s  ON 1 = 0
-            LEFT JOIN ods o              ON 1 = 0
-            LEFT JOIN eixos_tematicos et ON 1 = 0';
+            LEFT JOIN premiacao_inscricoes pi   ON 1 = 0
+            LEFT JOIN premiacao_categorias pc   ON 1 = 0
+            LEFT JOIN scores_negocios s         ON 1 = 0
+            LEFT JOIN ods o                     ON 1 = 0
+            LEFT JOIN eixos_tematicos et        ON 1 = 0';
         $colPosicao  = 'NULL';
         $colOrigem   = 'NULL';
         $ordemPadrao = 'n.nome_fantasia ASC';
@@ -143,18 +145,17 @@ try {
 
     $whereSQL = 'WHERE ' . implode(' AND ', $where);
 
-    // Ordenação — compativel com PHP 7+
+    // Ordenação
     $colunas_permitidas = ['nome' => 'n.nome_fantasia', 'categoria' => 'pc.nome'];
     if (!$isFaseFinal) {
         $colunas_permitidas['posicao'] = 'cl.posicao';
     }
-    $direcoes_permitidas = ['ASC', 'DESC'];
     $dir_req = strtoupper((string)($_GET['dir'] ?? ''));
     $ord_req = (string)($_GET['ordem'] ?? '');
 
     if (isset($colunas_permitidas[$ord_req])) {
         $coluna_ordem  = $colunas_permitidas[$ord_req];
-        $direcao_ordem = in_array($dir_req, $direcoes_permitidas, true) ? $dir_req : 'ASC';
+        $direcao_ordem = in_array($dir_req, ['ASC', 'DESC'], true) ? $dir_req : 'ASC';
         $orderSQL      = "{$coluna_ordem} {$direcao_ordem}";
     } else {
         $orderSQL = $ordemPadrao;
@@ -165,6 +166,7 @@ try {
     $pagina_atual = max(1, (int)($_GET['pagina'] ?? 1));
     $offset       = ($pagina_atual - 1) * $por_pagina;
 
+    // COUNT sem FROM duplicado — $fromBase já começa com FROM
     $sqlCount = "SELECT COUNT(*) {$fromBase} {$whereSQL}";
     $stmtCount = $pdo->prepare($sqlCount);
     $stmtCount->execute($params);
@@ -175,8 +177,9 @@ try {
         SELECT
             n.id,
             n.nome_fantasia,
-            pc.nome   AS categoria,
-            pc.id     AS categoria_id,
+            COALESCE(pc.nome, pi.categoria) AS categoria,
+            pc.id   AS categoria_id,
+            pi.id   AS inscricao_id,
             {$colPosicao} AS posicao_classificado,
             {$colOrigem}  AS origem_classificado,
             s.score_geral,
@@ -195,11 +198,12 @@ try {
     $stmt->execute($params);
     $negocios = $stmt->fetchAll();
 
-    // ── Votos já feitos por este usuário ────────────────────────────────────────
+    // ── Votos já feitos por este usuário ──────────────────────────────────────
     $votosPorCategoria = [];
-    $negociosVotados   = [];
+    $inscricoesVotadas = []; // chave: inscricao_id
     if ($faseId && $userId) {
         $tabelaVotos = ($role === 'juri') ? 'premiacao_votos_juri' : 'premiacao_votos_tecnicos';
+
         $stmtVotos = $pdo->prepare("
             SELECT pc2.nome AS categoria_nome, COUNT(*) AS total
             FROM {$tabelaVotos} v
@@ -212,14 +216,14 @@ try {
             $votosPorCategoria[$row['categoria_nome']] = (int)$row['total'];
         }
 
+        // Checa por inscricao_id (mais preciso que negocio_id)
         $stmtVotadosIds = $pdo->prepare("
-            SELECT pi2.negocio_id
-            FROM {$tabelaVotos} v
-            JOIN premiacao_inscricoes pi2 ON pi2.id = v.inscricao_id
-            WHERE v.fase_id = ? AND v.user_id = ?
+            SELECT inscricao_id
+            FROM {$tabelaVotos}
+            WHERE fase_id = ? AND user_id = ?
         ");
         $stmtVotadosIds->execute([$faseId, $userId]);
-        $negociosVotados = array_flip($stmtVotadosIds->fetchAll(PDO::FETCH_COLUMN));
+        $inscricoesVotadas = array_flip($stmtVotadosIds->fetchAll(PDO::FETCH_COLUMN));
     }
 
     // ── Filtros select (dropdown) ──────────────────────────────────────────────
@@ -499,6 +503,7 @@ include __DIR__ . '/../app/views/admin/header.php';
           <?php foreach ($negocios as $neg): ?>
             <?php
               $nid           = (int)$neg['id'];
+              $inscricaoId   = (int)($neg['inscricao_id'] ?? 0);
               $catId         = (int)$neg['categoria_id'];
               $ods_numero    = trim((string)($neg['ods_numero'] ?? ''));
               $ods_nome_val  = trim((string)($neg['ods_nome']   ?? ''));
@@ -506,7 +511,8 @@ include __DIR__ . '/../app/views/admin/header.php';
               $tem_ods       = ($neg['ods_id'] ?? null) !== null;
               $categoria     = (string)($neg['categoria'] ?? '');
 
-              $jaVotou        = isset($negociosVotados[$nid]);
+              // jaVotou verifica por inscricao_id (preciso) com fallback por negocio_id
+              $jaVotou        = isset($inscricoesVotadas[$inscricaoId]) && $inscricaoId > 0;
               $votosNaCateg   = $votosPorCategoria[$categoria] ?? 0;
               $limiteAtingido = ($limiteVotos > 0 && $votosNaCateg >= $limiteVotos);
               $btnDesabilitado = (!$fase || !$faseAtiva || $jaVotou || $limiteAtingido);
@@ -521,10 +527,12 @@ include __DIR__ . '/../app/views/admin/header.php';
                   $tooltip = $voto_label;
               }
 
+              // URL usa inscricao_id (esperado por votar_tecnico.php e votar_juri.php)
               $urlVoto = $voto_url
-                  . '?negocio_id='    . $nid
-                  . '&fase_id='       . $faseId
-                  . '&categoria_id='  . $catId;
+                  . '?inscricao_id=' . $inscricaoId
+                  . '&fase_id='      . $faseId
+                  . '&categoria_id=' . $catId
+                  . '&redirect='     . urlencode('/admin/votos_tecnicos.php');
             ?>
             <tr>
               <td class="col-id" style="color:#9aab9d; font-size:.78rem; font-family:monospace;">#<?= $nid ?></td>
