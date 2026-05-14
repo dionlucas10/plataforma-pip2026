@@ -28,10 +28,10 @@ function normalizarStatusPremiacao(?string $status): string
     $status = trim((string)$status);
 
     return match ($status) {
-        'em_triagem' => 'emtriagem',
+        'em_triagem'          => 'emtriagem',
         'classificada_fase_1' => 'classificadafase1',
         'classificada_fase_2' => 'classificadafase2',
-        default => $status,
+        default               => $status,
     };
 }
 
@@ -40,19 +40,24 @@ function eleitorFrontendAtual(): ?array
     if (!empty($_SESSION['user_id'])) {
         return ['tipo' => 'empreendedor', 'id' => (int)$_SESSION['user_id']];
     }
-
     if (!empty($_SESSION['parceiro_id'])) {
         return ['tipo' => 'parceiro', 'id' => (int)$_SESSION['parceiro_id']];
     }
-
     if (!empty($_SESSION['logado']) && ($_SESSION['usuario_tipo'] ?? '') === 'sociedade_civil' && !empty($_SESSION['usuario_id'])) {
         return ['tipo' => 'sociedade_civil', 'id' => (int)$_SESSION['usuario_id']];
     }
-
     return null;
 }
 
 $actorFrontend = eleitorFrontendAtual();
+
+// Mapeamento de categoria → ícone PNG
+$iconesCat = [
+    'Ideação'       => '/assets/images/icons/ideacao.png',
+    'Operação'      => '/assets/images/icons/operacao.png',
+    'Tração/Escala' => '/assets/images/icons/tracao.png',
+    'Dinamizador'   => '/assets/images/icons/dinamizadores.png',
+];
 
 // Base da query
 $sql = "
@@ -184,7 +189,7 @@ if ($faseTmp) {
 $mapVotacao = [];
 
 if ($faseVotoAtiva && !empty($negocios)) {
-    $idsNegocios = array_map(static fn($n) => (int)$n['id'], $negocios);
+    $idsNegocios  = array_map(static fn($n) => (int)$n['id'], $negocios);
     $placeholders = implode(',', array_fill(0, count($idsNegocios), '?'));
 
     $stmtInsc = $pdo->prepare("
@@ -200,19 +205,19 @@ if ($faseVotoAtiva && !empty($negocios)) {
 
         if (in_array($statusNorm, ['elegivel', 'classificadafase1', 'classificadafase2', 'finalista', 'vencedora'], true)) {
             $mapVotacao[(int)$insc['negocio_id']] = [
-                'inscricao_id' => (int)$insc['id'],
-                'status' => $statusNorm,
-                'votacao_ativa' => true,
-                'ja_votou' => false,
+                'inscricao_id'   => (int)$insc['id'],
+                'status'         => $statusNorm,
+                'votacao_ativa'  => true,
+                'ja_votou'       => false,
                 'premiacao_nome' => $faseVotoAtiva['premiacao_nome'],
-                'premiacao_ano' => (int)$faseVotoAtiva['premiacao_ano'],
-                'fase_id' => (int)$faseVotoAtiva['fase_id'],
+                'premiacao_ano'  => (int)$faseVotoAtiva['premiacao_ano'],
+                'fase_id'        => (int)$faseVotoAtiva['fase_id'],
             ];
         }
     }
 
     if ($actorFrontend && !empty($mapVotacao)) {
-        $idsInscricoes = array_column($mapVotacao, 'inscricao_id');
+        $idsInscricoes    = array_column($mapVotacao, 'inscricao_id');
         $placeholdersInsc = implode(',', array_fill(0, count($idsInscricoes), '?'));
 
         $stmtJaV = $pdo->prepare("
@@ -226,7 +231,7 @@ if ($faseVotoAtiva && !empty($negocios)) {
         $stmtJaV->execute(array_merge([
             (int)$faseVotoAtiva['fase_id'],
             $actorFrontend['tipo'],
-            $actorFrontend['id']
+            $actorFrontend['id'],
         ], $idsInscricoes));
 
         $jaVotados = array_map('intval', $stmtJaV->fetchAll(PDO::FETCH_COLUMN));
@@ -256,7 +261,7 @@ if ($faseVotoAtiva && !empty($negocios)) {
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
             <div>
                 <span class="badge text-bg-light px-3 py-2 rounded-pill border">
-                    <?= count($parceiros ?? $negocios ?? []) ?> resultado(s)
+                    <?= count($negocios) ?> resultado(s)
                 </span>
             </div>
 
@@ -270,18 +275,17 @@ if ($faseVotoAtiva && !empty($negocios)) {
                     aria-controls="painelFiltros">
                     <i class="bi bi-sliders me-2"></i> Filtros
                 </button>
-
-                <a href="vitrine_nacional.php"  class="btn btn-outline-secondary">Limpar</a>
+                <a href="vitrine_nacional.php" class="btn btn-outline-secondary">Limpar</a>
             </div>
         </div>
 
         <?php if (
-            !empty($_GET['ods']) ||
-            !empty($_GET['eixo']) ||
+            !empty($_GET['ods'])       ||
+            !empty($_GET['eixo'])      ||
             !empty($_GET['categoria']) ||
-            !empty($_GET['estado']) ||
+            !empty($_GET['estado'])    ||
             !empty($_GET['municipio']) ||
-            !empty($_GET['setor']) ||
+            !empty($_GET['setor'])     ||
             !empty($_GET['perfil'])
         ): ?>
             <div class="vitrine-filtros-ativos-inline mt-3">
@@ -289,15 +293,12 @@ if ($faseVotoAtiva && !empty($negocios)) {
                     <?php if (!empty($_GET['ods'])): ?>
                         <span class="vitrine-filtro-chip">ODS: <?= htmlspecialchars($_GET['ods']) ?></span>
                     <?php endif; ?>
-
                     <?php if (!empty($_GET['eixo'])): ?>
                         <span class="vitrine-filtro-chip">Eixo: <?= htmlspecialchars($_GET['eixo']) ?></span>
                     <?php endif; ?>
-
                     <?php if (!empty($_GET['setor'])): ?>
                         <span class="vitrine-filtro-chip">Setor: <?= htmlspecialchars($_GET['setor']) ?></span>
                     <?php endif; ?>
-
                     <?php if (!empty($_GET['perfil'])): ?>
                         <span class="vitrine-filtro-chip">Perfil: <?= htmlspecialchars($_GET['perfil']) ?></span>
                     <?php endif; ?>
@@ -382,40 +383,28 @@ if ($faseVotoAtiva && !empty($negocios)) {
 
     <?php if (!empty($negocios)): ?>
         <div class="row g-4">
-            <?php foreach ($negocios as $n): ?>
-                <?php
-                    $categoria = trim($n['categoria'] ?? '');
-
-                    $cores_categoria = [
-                        'Ideação' => '#f59e0b',
-                        'Operação' => '#3b82f6',
-                        'Tração/Escala' => '#16a34a',
-                        'Dinamizador' => '#9333ea'
-                    ];
-
-                    $cor_categoria = $cores_categoria[$categoria] ?? '#1E3425';
-
-                    $temCapa = !empty($n['imagem_destaque']);
-                    $temLogo = !empty($n['logo_negocio']);
-                ?>
-
+            <?php foreach ($negocios as $n):
+                $categoria = trim($n['categoria'] ?? '');
+                $iconeCat  = $iconesCat[$categoria] ?? null;
+                $temCapa   = !empty($n['imagem_destaque']);
+                $temLogo   = !empty($n['logo_negocio']);
+            ?>
                 <div class="col-md-6 col-xl-4">
                     <article class="vitrine-card h-100">
-                        <a href="/negocio.php?id=<?= $n['id'] ?>" class="vitrine-card-link-area">
+                        <a href="/negocio.php?id=<?= (int)$n['id'] ?>" class="vitrine-card-link-area">
+
                             <div class="vitrine-card-media <?= !$temCapa ? 'sem-capa' : '' ?>">
                                 <?php if ($temCapa): ?>
                                     <img
                                         src="<?= htmlspecialchars($n['imagem_destaque']) ?>"
                                         alt="Imagem de destaque de <?= htmlspecialchars($n['nome_fantasia']) ?>"
-                                        class="vitrine-card-cover"
-                                    >
+                                        class="vitrine-card-cover">
                                 <?php elseif ($temLogo): ?>
                                     <div class="vitrine-card-logo-wrap">
                                         <img
                                             src="<?= htmlspecialchars($n['logo_negocio']) ?>"
                                             alt="Logo de <?= htmlspecialchars($n['nome_fantasia']) ?>"
-                                            class="vitrine-card-logo"
-                                        >
+                                            class="vitrine-card-logo">
                                     </div>
                                 <?php else: ?>
                                     <div class="vitrine-card-fallback">
@@ -423,8 +412,14 @@ if ($faseVotoAtiva && !empty($negocios)) {
                                     </div>
                                 <?php endif; ?>
 
-                                <?php if (!empty($categoria)): ?>
-                                    <span class="vitrine-card-categoria" style="--categoria-cor: <?= htmlspecialchars($cor_categoria) ?>;">
+                                <!-- Badge de categoria minimalista com ícone PNG -->
+                                <?php if ($categoria !== ''): ?>
+                                    <span class="vitrine-card-categoria-badge">
+                                        <?php if ($iconeCat): ?>
+                                            <img src="<?= htmlspecialchars($iconeCat) ?>"
+                                                 alt="<?= htmlspecialchars($categoria) ?>"
+                                                 class="vitrine-cat-icon">
+                                        <?php endif; ?>
                                         <?= htmlspecialchars($categoria) ?>
                                     </span>
                                 <?php endif; ?>
@@ -465,7 +460,7 @@ if ($faseVotoAtiva && !empty($negocios)) {
                         </a>
 
                         <div class="vitrine-card-actions">
-                            <a href="/negocio.php?id=<?= $n['id'] ?>" class="btn btn-outline-primary">Ver negócio</a>
+                            <a href="/negocio.php?id=<?= (int)$n['id'] ?>" class="btn btn-outline-primary">Ver negócio</a>
                         </div>
                     </article>
                 </div>
