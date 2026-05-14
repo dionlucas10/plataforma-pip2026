@@ -5,12 +5,20 @@ ini_set('display_errors', '1');
 error_reporting(E_ALL);
 require_once __DIR__ . '/app/helpers/premiacao_auth.php';
 
-$config  = require __DIR__ . '/app/config/db.php';
+$config = require __DIR__ . '/app/config/db.php';
 $pdo = new PDO(
     "mysql:host={$config['host']};dbname={$config['dbname']};port={$config['port']};charset={$config['charset']}",
     $config['user'], $config['pass'],
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
 );
+
+// Mapeamento de categoria → ícone PNG
+$iconesCat = [
+    'Ideação'       => '/assets/images/icons/ideacao.png',
+    'Operação'      => '/assets/images/icons/operacao.png',
+    'Tração/Escala' => '/assets/images/icons/tracao.png',
+    'Dinamizador'   => '/assets/images/icons/dinamizadores.png',
+];
 
 // ── URL atual com filtros preservados (usada no redirect pós-voto) ────────────
 $filtrosAtivos = array_filter([
@@ -22,10 +30,9 @@ $filtrosAtivos = array_filter([
 ]);
 $redirectComFiltros = '/premiacao.php' . (!empty($filtrosAtivos) ? '?' . http_build_query($filtrosAtivos) : '');
 
-// ── 1. Premiação ativa ────────────────────────────────────────────────────────
+// ── 1. Premiação ativa ──────────────────────────────────────────────────────
 $premiacao = $pdo->query("
-    SELECT id, nome, slug, ano, status,
-           regulamento_url
+    SELECT id, nome, slug, ano, status, regulamento_url
     FROM premiacoes
     WHERE status IN ('ativa','planejada')
     ORDER BY CASE WHEN status = 'ativa' THEN 0 ELSE 1 END, ano DESC
@@ -34,7 +41,7 @@ $premiacao = $pdo->query("
 
 $premiacaoId = (int)($premiacao['id'] ?? 0);
 
-// ── 2. Fase com voto popular em andamento ────────────────────────────────────
+// ── 2. Fase com voto popular em andamento ──────────────────────────────
 $faseAtiva = null;
 if ($premiacaoId > 0) {
     $stmtFase = $pdo->prepare("
@@ -50,7 +57,6 @@ if ($premiacaoId > 0) {
     $faseAtiva = $stmtFase->fetch(PDO::FETCH_ASSOC) ?: null;
 }
 
-// Validação via datas da fase ativa
 $votacaoAbertaPorData = false;
 if ($faseAtiva) {
     $stmtFaseDatas = $pdo->prepare("SELECT data_inicio, data_fim FROM premiacao_fases WHERE id = ? LIMIT 1");
@@ -65,38 +71,17 @@ if ($faseAtiva) {
 }
 $votacaoAberta = $faseAtiva && $votacaoAbertaPorData;
 
-// ── Determina o pool de status elegíveis para a fase ativa ───────────────────
-/**
- * Retorna o IN(...) de status válidos para a fase atual:
- *
- * - tipo_fase = 'final'         → 'finalista','classificada_fase_2'
- *   (negócios aprovados na fase 2 podem ter qualquer um dos dois)
- *
- * - rodada 1 (classificatória)  → 'elegivel'
- *
- * - rodada N > 1                → 'elegivel' + todos os
- *   'classificada_fase_1' ... 'classificada_fase_{N-1}'
- *   (garante que quem passou nas fases anteriores sempre aparece)
- */
 function buildStatusPoolPublic(?array $fase): string
 {
     if (!$fase) return "'elegivel'";
-
     $tipo   = $fase['tipo_fase'] ?? 'classificatoria';
     $rodada = (int)($fase['rodada'] ?? 1);
-
     if ($tipo === 'final') {
-        // Fase final: aceita tanto 'finalista' quanto 'classificada_fase_2'
         return "'finalista','classificada_fase_2'";
     }
-
-    // Fase classificatória rodada 1
     if ($rodada <= 1) {
         return "'elegivel'";
     }
-
-    // Fase classificatória rodada N > 1:
-    // inclui 'elegivel' + 'classificada_fase_1' até 'classificada_fase_{N-1}'
     $pool = ["'elegivel'"];
     for ($i = 1; $i < $rodada; $i++) {
         $pool[] = "'classificada_fase_{$i}'";
@@ -108,13 +93,13 @@ $statusPool    = buildStatusPoolPublic($faseAtiva);
 $statusPoolArr = array_unique(array_map('trim', explode(',', str_replace("'", '', $statusPool))));
 $statusPoolIn  = implode(',', array_map(fn($s) => "'$s'", $statusPoolArr));
 
-// ── Actor unificado (empreendedor, parceiro, sociedade_civil) ─────────────────
+// ── Actor unificado ──────────────────────────────────────────────────────────────
 $actor         = premiacao_current_actor();
 $usuarioLogado = $actor !== null && $actor['contexto'] === 'frontend';
 $usuarioId     = $actor['id']   ?? null;
 $tipoEleitor   = $actor['tipo'] ?? 'empreendedor';
 
-// ── 3. Votos já dados pelo usuário nesta fase ────────────────────────────────
+// ── 3. Votos já dados pelo usuário nesta fase ────────────────────────────
 $votosDoUsuario = [];
 if ($usuarioLogado && $faseAtiva && $usuarioId) {
     $stmtVotos = $pdo->prepare("
@@ -129,7 +114,7 @@ if ($usuarioLogado && $faseAtiva && $usuarioId) {
     $votosDoUsuario = $stmtVotos->fetchAll(PDO::FETCH_COLUMN);
 }
 
-// ── 4. Negócios inscritos e elegíveis para a fase atual ──────────────────────
+// ── 4. Negócios inscritos e elegíveis ──────────────────────────────────
 $sql = "
     SELECT
         n.id, n.nome_fantasia, n.categoria, n.municipio, n.estado,
@@ -158,18 +143,18 @@ $params = [
     ':fid_count' => (int)($faseAtiva['id'] ?? 0),
 ];
 
-if (!empty($_GET['categoria'])) { $sql .= " AND n.categoria = :categoria";       $params[':categoria'] = $_GET['categoria']; }
-if (!empty($_GET['estado']))    { $sql .= " AND n.estado = :estado";             $params[':estado']    = $_GET['estado'];    }
-if (!empty($_GET['municipio'])) { $sql .= " AND n.municipio = :municipio";       $params[':municipio'] = $_GET['municipio']; }
-if (!empty($_GET['eixo']))      { $sql .= " AND n.eixo_principal_id = :eixo";    $params[':eixo']      = $_GET['eixo'];      }
-if (!empty($_GET['ods']))       { $sql .= " AND n.ods_prioritaria_id = :ods";    $params[':ods']       = $_GET['ods'];       }
+if (!empty($_GET['categoria'])) { $sql .= " AND n.categoria = :categoria";    $params[':categoria'] = $_GET['categoria']; }
+if (!empty($_GET['estado']))    { $sql .= " AND n.estado = :estado";           $params[':estado']    = $_GET['estado'];    }
+if (!empty($_GET['municipio'])) { $sql .= " AND n.municipio = :municipio";     $params[':municipio'] = $_GET['municipio']; }
+if (!empty($_GET['eixo']))      { $sql .= " AND n.eixo_principal_id = :eixo"; $params[':eixo']      = $_GET['eixo'];      }
+if (!empty($_GET['ods']))       { $sql .= " AND n.ods_prioritaria_id = :ods"; $params[':ods']       = $_GET['ods'];       }
 
 $sql .= " ORDER BY n.nome_fantasia";
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $negocios = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// ── 5. Filtros para os selects ───────────────────────────────────────────────
+// ── 5. Filtros para os selects ───────────────────────────────────────────
 $qBase = "
     FROM negocios n
     INNER JOIN premiacao_inscricoes pi
@@ -377,14 +362,14 @@ include __DIR__ . '/app/views/public/header_public.php';
     <?php if (!empty($negocios)): ?>
         <div class="row g-4">
             <?php foreach ($negocios as $n):
-                $cores   = ['Ideação'=>'#f59e0b','Operação'=>'#3b82f6','Tração/Escala'=>'#16a34a','Dinamizador'=>'#9333ea'];
-                $corCat  = $cores[$n['categoria']] ?? '#1E3425';
-                $jaVotou = in_array($n['id'], $votosDoUsuario);
+                $categoria = trim($n['categoria'] ?? '');
+                $iconeCat  = $iconesCat[$categoria] ?? null;
+                $jaVotou   = in_array($n['id'], $votosDoUsuario);
             ?>
             <div class="col-md-6 col-xl-4">
                 <article class="vitrine-card h-100">
 
-                    <a href="/negocio.php?id=<?= $n['id'] ?>" class="vitrine-card-link-area">
+                    <a href="/negocio.php?id=<?= (int)$n['id'] ?>" class="vitrine-card-link-area">
                         <div class="vitrine-card-media <?= empty($n['imagem_destaque']) ? 'sem-capa' : '' ?>">
                             <?php if (!empty($n['imagem_destaque'])): ?>
                                 <img src="<?= htmlspecialchars($n['imagem_destaque']) ?>"
@@ -398,14 +383,19 @@ include __DIR__ . '/app/views/public/header_public.php';
                                 </div>
                             <?php else: ?>
                                 <div class="vitrine-card-fallback">
-                                    <span><?= mb_strtoupper(mb_substr($n['nome_fantasia'], 0, 1)) ?></span>
+                                    <span><?= htmlspecialchars(mb_strtoupper(mb_substr($n['nome_fantasia'], 0, 1))) ?></span>
                                 </div>
                             <?php endif; ?>
 
-                            <?php if (!empty($n['categoria'])): ?>
-                                <span class="vitrine-card-categoria"
-                                      style="--categoria-cor:<?= $corCat ?>;">
-                                    <?= htmlspecialchars($n['categoria']) ?>
+                            <!-- Badge de categoria minimalista com ícone PNG -->
+                            <?php if ($categoria !== ''): ?>
+                                <span class="vitrine-card-categoria-badge">
+                                    <?php if ($iconeCat): ?>
+                                        <img src="<?= htmlspecialchars($iconeCat) ?>"
+                                             alt="<?= htmlspecialchars($categoria) ?>"
+                                             class="vitrine-cat-icon">
+                                    <?php endif; ?>
+                                    <?= htmlspecialchars($categoria) ?>
                                 </span>
                             <?php endif; ?>
 
@@ -449,7 +439,7 @@ include __DIR__ . '/app/views/public/header_public.php';
 
                     <!-- Ações do card -->
                     <div class="vitrine-card-actions">
-                        <a href="/negocio.php?id=<?= $n['id'] ?>" class="btn btn-outline-primary">
+                        <a href="/negocio.php?id=<?= (int)$n['id'] ?>" class="btn btn-outline-primary">
                             Ver negócio
                         </a>
 
