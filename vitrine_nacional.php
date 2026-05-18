@@ -480,7 +480,7 @@ if ($faseVotoAtiva && !empty($negocios)) {
                         </a>
 
                         <div class="vitrine-card-actions">
-                            <a href="/negocio.php?id=<?= (int)$n['id'] ?>" class="btn btn-outline-primary">Ver negócio</a>
+                            <a href="/negocio.php?id=<?= (int)$n['id'] ?>" class="btn btn-outline-primary">Conhecer Negócio</a>
                         </div>
                     </article>
                 </div>

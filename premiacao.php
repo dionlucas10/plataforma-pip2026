@@ -71,58 +71,26 @@ if ($faseAtiva) {
 }
 $votacaoAberta = $faseAtiva && $votacaoAbertaPorData;
 
-/**
- * Retorna a lista de status válidos para exibir negócios na vitrine pública.
- *
- * ATENÇÃO: Os status gravados no banco (pela função statusNovoPorFase em
- * premiacao_apuracao_gravar.php) usam formato SEM underscore intermediário:
- *   - 'classificadafase1'  (não 'classificada_fase_1')
- *   - 'classificadafase2'  (não 'classificada_fase_2')
- * Confira premiacao_inscricoes.php::normalizarStatusPremiacao() como referência.
- *
- * A função é dinâmica: fase classificatoria rodada N inclui todos os
- * status até classificadafase(N-1) no pool, além de 'elegivel'.
- */
-function buildStatusPoolPublic(?array $fase): array
+function buildStatusPoolPublic(?array $fase): string
 {
-    // Pool base sempre visível independente da fase
-    $poolBase = [
-        'elegivel',
-        'classificadafase1',
-        'classificadafase2',
-        'finalista',
-        'vencedora',
-    ];
-
-    if (!$fase) {
-        // Sem fase ativa: exibe todos os inscritos com status ativo
-        // (inclui 'enviada' e 'emtriagem' para não ocultar negócios recém-inscritos)
-        return array_merge($poolBase, ['enviada', 'emtriagem']);
-    }
-
+    if (!$fase) return "'elegivel'";
     $tipo   = $fase['tipo_fase'] ?? 'classificatoria';
     $rodada = (int)($fase['rodada'] ?? 1);
-
     if ($tipo === 'final') {
-        // Fase final: mostra apenas finalistas e classificados da última fase
-        return ['finalista', 'classificadafase2', 'vencedora'];
+        return "'finalista','classificada_fase_2'";
     }
-
     if ($rodada <= 1) {
-        // Fase 1: apenas elegíveis votam
-        return ['elegivel'];
+        return "'elegivel'";
     }
-
-    // Fases 2, 3, ... N: pool dinâmico
-    // Rodada 2 aceita classificadafase1; rodada 3 aceita classificadafase1 e classificadafase2; etc.
-    $pool = ['elegivel'];
+    $pool = ["'elegivel'"];
     for ($i = 1; $i < $rodada; $i++) {
-        $pool[] = 'classificadafase' . $i;  // sem underscore, como está no banco
+        $pool[] = "'classificada_fase_{$i}'";
     }
-    return $pool;
+    return implode(',', $pool);
 }
 
-$statusPoolArr = buildStatusPoolPublic($faseAtiva);
+$statusPool    = buildStatusPoolPublic($faseAtiva);
+$statusPoolArr = array_unique(array_map('trim', explode(',', str_replace("'", '', $statusPool))));
 $statusPoolIn  = implode(',', array_map(fn($s) => "'$s'", $statusPoolArr));
 
 // ── Actor unificado ──────────────────────────────────────────────────────────────
@@ -147,9 +115,6 @@ if ($usuarioLogado && $faseAtiva && $usuarioId) {
 }
 
 // ── 4. Negócios inscritos e elegíveis ──────────────────────────────────
-// O filtro n.publicado_vitrine = 1 foi REMOVIDO como condição obrigatória.
-// Negócios inscritos na premiação aparecem mesmo que não estejam publicados
-// na vitrine geral. Publicados na vitrine aparecem primeiro na ordenação.
 $sql = "
     SELECT
         n.id, n.nome_fantasia, n.categoria, n.municipio, n.estado,
@@ -157,7 +122,6 @@ $sql = "
         o.icone_url,
         e.nome AS eixo_tematico_nome,
         pi.id  AS inscricao_id,
-        n.publicado_vitrine,
         (
             SELECT COUNT(*)
             FROM premiacao_votos_populares pvp2
@@ -172,7 +136,7 @@ $sql = "
     LEFT JOIN negocio_apresentacao a  ON a.negocio_id = n.id
     LEFT JOIN ods o                   ON o.id = n.ods_prioritaria_id
     LEFT JOIN eixos_tematicos e       ON e.id = n.eixo_principal_id
-    WHERE 1=1
+    WHERE n.publicado_vitrine = 1
 ";
 $params = [
     ':pid'       => $premiacaoId,
@@ -185,8 +149,7 @@ if (!empty($_GET['municipio'])) { $sql .= " AND n.municipio = :municipio";     $
 if (!empty($_GET['eixo']))      { $sql .= " AND n.eixo_principal_id = :eixo"; $params[':eixo']      = $_GET['eixo'];      }
 if (!empty($_GET['ods']))       { $sql .= " AND n.ods_prioritaria_id = :ods"; $params[':ods']       = $_GET['ods'];       }
 
-// Ordena: publicados na vitrine primeiro, depois por nome
-$sql .= " ORDER BY n.publicado_vitrine DESC, n.nome_fantasia";
+$sql .= " ORDER BY n.nome_fantasia";
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $negocios = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -196,18 +159,18 @@ $qBase = "
     FROM negocios n
     INNER JOIN premiacao_inscricoes pi
         ON pi.negocio_id = n.id AND pi.premiacao_id = ? AND pi.status IN ($statusPoolIn)
-    WHERE 1=1
+    WHERE n.publicado_vitrine = 1
 ";
 
-$categorias = $pdo->prepare("SELECT DISTINCT n.categoria $qBase AND n.categoria IS NOT NULL AND n.categoria <> '' ORDER BY n.categoria");
+$categorias = $pdo->prepare("SELECT DISTINCT n.categoria $qBase ORDER BY n.categoria");
 $categorias->execute([$premiacaoId]);
 $categorias = $categorias->fetchAll(PDO::FETCH_COLUMN);
 
-$estados = $pdo->prepare("SELECT DISTINCT n.estado $qBase AND n.estado IS NOT NULL AND n.estado <> '' ORDER BY n.estado");
+$estados = $pdo->prepare("SELECT DISTINCT n.estado $qBase ORDER BY n.estado");
 $estados->execute([$premiacaoId]);
 $estados = $estados->fetchAll(PDO::FETCH_COLUMN);
 
-$municipios = $pdo->prepare("SELECT DISTINCT n.municipio $qBase AND n.municipio IS NOT NULL AND n.municipio <> '' ORDER BY n.municipio");
+$municipios = $pdo->prepare("SELECT DISTINCT n.municipio $qBase ORDER BY n.municipio");
 $municipios->execute([$premiacaoId]);
 $municipios = $municipios->fetchAll(PDO::FETCH_COLUMN);
 
@@ -217,7 +180,7 @@ $ods = $pdo->prepare("
     INNER JOIN premiacao_inscricoes pi
         ON pi.negocio_id = n.id AND pi.premiacao_id = ? AND pi.status IN ($statusPoolIn)
     INNER JOIN ods o ON o.id = n.ods_prioritaria_id
-    WHERE 1=1
+    WHERE n.publicado_vitrine = 1
     ORDER BY o.id
 ");
 $ods->execute([$premiacaoId]);
@@ -229,7 +192,7 @@ $eixos = $pdo->prepare("
     INNER JOIN premiacao_inscricoes pi
         ON pi.negocio_id = n.id AND pi.premiacao_id = ? AND pi.status IN ($statusPoolIn)
     INNER JOIN eixos_tematicos et ON et.id = n.eixo_principal_id
-    WHERE 1=1
+    WHERE n.publicado_vitrine = 1
     ORDER BY et.nome
 ");
 $eixos->execute([$premiacaoId]);
@@ -282,7 +245,7 @@ include __DIR__ . '/app/views/public/header_public.php';
     <!-- Banner: votação fechada -->
     <?php if (!$votacaoAberta): ?>
         <div class="alert d-flex align-items-center gap-3 mb-4 rounded-3"
-             style="background:#fff8e1;border:1px solid #ffe082;color:#795548;">
+             style="background:#95BCCC;border:1px solid #bcd6e1;color:#1E3425;">
             <i class="bi bi-hourglass-split fs-4 flex-shrink-0"></i>
             <div>
                 <strong>Votação ainda não iniciada.</strong>
@@ -477,7 +440,7 @@ include __DIR__ . '/app/views/public/header_public.php';
                     <!-- Ações do card -->
                     <div class="vitrine-card-actions">
                         <a href="/negocio.php?id=<?= (int)$n['id'] ?>" class="btn btn-outline-primary">
-                            Ver negócio
+                            Conhecer Negócio
                         </a>
 
                         <?php if (!$votacaoAberta): ?>

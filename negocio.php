@@ -195,7 +195,7 @@ if ($dadosVot) {
                             alt="Imagem padrão"
                             class="negocio-publico-cover-moldura"
                         >
-                        <p class="negocio-publico-cover-texto">Juntos, ampliamos o que o mundo tem de melhor</p>
+                        <p class="negocio-publico-cover-texto">Juntos, ampliamos o que o mundo tem de melhor!</p>
                     </div>
                 <?php endif; ?>
             </div>
@@ -278,7 +278,7 @@ if ($dadosVot) {
 
                 <div class="negocio-publico-sidebar">
 
-                    <aside class="negocio-side-card">
+                    <!-- <aside class="negocio-side-card">
                         
                         <h3 class="negocio-side-title">Ações</h3>
 
@@ -330,7 +330,7 @@ if ($dadosVot) {
                                 <span>Investir</span>
                             </a>
                         </div>
-                    </aside>
+                    </aside> -->
 
                     <?php if (
                         !empty($negocio['email_comercial']) ||

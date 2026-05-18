@@ -42,14 +42,26 @@ if (!is_array($tipos_parceria)) $tipos_parceria = [];
 $especialidades = !empty($parceiro['tags_especialidades']) ? json_decode($parceiro['tags_especialidades'], true) : [];
 if (!is_array($especialidades)) $especialidades = [];
 
+// ──────────────────────────────────────────
+// Page title e meta dinâmicos 
+// ──────────────────────────────────────────
+$nomeParceiro    = htmlspecialchars($parceiro['nome_fantasia'] ?? 'Parceiro');
+$setor           = $parceiro['setor_atuacao'] ?? '';
+$porte           = $parceiro['porte_empresa']  ?? '';
+
+$pageTitle       = $nomeParceiro . ' | Parceiros | Impactos Positivos';
+
+$pageDescription = !empty($parceiro['slogan'])
+    ? htmlspecialchars(mb_strimwidth($parceiro['slogan'], 0, 155, '...'))
+    : 'Conheça ' . $nomeParceiro
+        . (!empty($setor) ? ', atuando em ' . htmlspecialchars($setor) : '')
+        . (!empty($porte) ? ' — ' . htmlspecialchars($porte)           : '')
+        . '. Um parceiro oficial da plataforma Impactos Positivos.';
+// ──────────────────────────────────────────
+
 include __DIR__ . '/app/views/public/header_public.php';
 ?>
 
-<!-- <div class="container pt-4">
-    <a href="parceiros.php" class="btn btn-light rounded-pill px-4 py-2 fw-semibold">
-        <i class="bi bi-arrow-left me-2"></i> Voltar para parceiros
-    </a>
-</div> -->
 
 <!-- BANNER / CAPA -->
 <?php if (!empty($parceiro['imagem_capa_url'])): ?>
@@ -75,9 +87,9 @@ include __DIR__ . '/app/views/public/header_public.php';
                         <div class="me-md-4 mb-3 mb-md-0 position-relative">
                             <?php if (!empty($parceiro['logo_url'])): ?>
                                 <img src="<?= htmlspecialchars($parceiro['logo_url']) ?>" 
-                                     alt="<?= htmlspecialchars($parceiro['nome_fantasia']) ?>"
-                                     class="rounded-circle shadow bg-white p-1" 
-                                     style="width: 150px; height: 150px; object-fit: cover; margin-top: -60px;">
+     alt="<?= htmlspecialchars($parceiro['nome_fantasia']) ?>"
+     class="rounded-circle shadow bg-white p-2" 
+     style="width: 150px; height: 150px; object-fit: contain; object-position: center; margin-top: -60px; background: #fff;">
                             <?php else: ?>
                                 <div class="rounded-circle bg-white shadow d-flex align-items-center justify-content-center border" 
                                      style="width: 150px; height: 150px; margin-top: -60px;">
@@ -190,28 +202,46 @@ include __DIR__ . '/app/views/public/header_public.php';
                                             
                                             <?php if (!empty($parceiro['email_publico'])): ?>
                                                 <a href="mailto:<?= htmlspecialchars($parceiro['email_publico']) ?>" class="text-decoration-none text-dark d-flex align-items-center">
-                                                    <div class="bg-white rounded-circle d-flex align-items-center justify-content-center shadow-sm me-3" style="width: 40px; height: 40px;">
+                                                    <div class="bg-white rounded-circle d-flex align-items-center justify-content-center shadow-sm me-3" style="width: 30px; height: 30px;">
                                                         <i class="bi bi-envelope text-primary"></i>
                                                     </div>
-                                                    <span class="text-break"><?= htmlspecialchars($parceiro['email_publico']) ?></span>
+                                                    <span class="text-break canais-parceiros"><?= htmlspecialchars($parceiro['email_publico']) ?></span>
                                                 </a>
                                             <?php endif; ?>
 
                                             <?php if (!empty($parceiro['linkedin_url'])): ?>
                                                 <a href="<?= htmlspecialchars($parceiro['linkedin_url']) ?>" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-dark d-flex align-items-center">
-                                                    <div class="bg-white rounded-circle d-flex align-items-center justify-content-center shadow-sm me-3" style="width: 40px; height: 40px;">
+                                                    <div class="bg-white rounded-circle d-flex align-items-center justify-content-center shadow-sm me-3" style="width: 30px; height: 30px;">
                                                         <i class="bi bi-linkedin" style="color: #0A66C2;"></i>
                                                     </div>
-                                                    <span>LinkedIn</span>
+                                                    <span class="text-break canais-parceiros">LinkedIn</span>
                                                 </a>
                                             <?php endif; ?>
 
                                             <?php if (!empty($parceiro['instagram_url'])): ?>
                                                 <a href="<?= htmlspecialchars($parceiro['instagram_url']) ?>" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-dark d-flex align-items-center">
-                                                    <div class="bg-white rounded-circle d-flex align-items-center justify-content-center shadow-sm me-3" style="width: 40px; height: 40px;">
+                                                    <div class="bg-white rounded-circle d-flex align-items-center justify-content-center shadow-sm me-3" style="width: 30px; height: 30px;">
                                                         <i class="bi bi-instagram text-danger"></i>
                                                     </div>
-                                                    <span>Instagram</span>
+                                                    <span class="text-break canais-parceiros">Instagram</span>
+                                                </a>
+                                            <?php endif; ?>                                            
+
+                                            <?php if (!empty($parceiro['facebook_url'])): ?>
+                                                <a href="<?= htmlspecialchars($parceiro['facebook_url']) ?>" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-dark d-flex align-items-center">
+                                                    <div class="bg-white rounded-circle d-flex align-items-center justify-content-center shadow-sm me-3" style="width: 30px; height: 30px;">
+                                                        <i class="bi bi-facebook text-danger"></i>
+                                                    </div>
+                                                    <span class="text-break canais-parceiros">Facebook</span>
+                                                </a>
+                                            <?php endif; ?>                                     
+
+                                            <?php if (!empty($parceiro['youtube_url'])): ?>
+                                                <a href="<?= htmlspecialchars($parceiro['youtube_url']) ?>" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-dark d-flex align-items-center">
+                                                    <div class="bg-white rounded-circle d-flex align-items-center justify-content-center shadow-sm me-3" style="width: 30px; height: 30px;">
+                                                        <i class="bi bi-youtube text-danger"></i>
+                                                    </div>
+                                                    <span class="text-break canais-parceiros">YouTube</span>
                                                 </a>
                                             <?php endif; ?>
 

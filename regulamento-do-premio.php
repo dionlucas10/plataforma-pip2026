@@ -1,12 +1,31 @@
 <?php
-// /regulamento-do-premio.php
-declare(strict_types=1);
+// ✅ Inicia sessão
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// ✅ Ativa exibição de erros
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// ✅ Carrega configuração do banco
+$config = require __DIR__ . '/app/config/db.php';
+
+// ✅ CRIA A CONEXÃO PDO (essencial!)
+$pdo = new PDO(
+    "mysql:host={$config['host']};dbname={$config['dbname']};port={$config['port']};charset={$config['charset']}",
+    $config['user'],
+    $config['pass'],
+    [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+    ]
+);
 
 $pageTitle = 'Regulamento do Prêmio Impactos Positivos 2026 | Impactos Positivos';
-
 include __DIR__ . '/app/views/public/header_public.php';
 ?>
-
 <!-- ═══════════════════════════════════════
      HERO — REGULAMENTO
 ════════════════════════════════════════ -->
@@ -26,7 +45,7 @@ include __DIR__ . '/app/views/public/header_public.php';
           Leia com atenção todas as regras, critérios e disposições antes de realizar sua inscrição ou votação.
         </p>
         <div class="d-flex flex-wrap gap-2">
-          <a href="https://vitrine.impactospositivos.com" target="_blank" rel="noopener" class="btn-premiacao-primary">
+          <a href="empreendedores/register.php" class="btn-premiacao-primary">
             <i class="bi bi-pencil-square me-2"></i> Inscreva-se agora
           </a>
           <a href="#sec-participacao" class="btn-premiacao-outline">
@@ -83,7 +102,7 @@ include __DIR__ . '/app/views/public/header_public.php';
             <li><a href="#sec-promotora"><span class="toc-num">–</span> Promotora</a></li>
           </ul>
           <div class="reg-toc-cta">
-            <a href="https://vitrine.impactospositivos.com" target="_blank" rel="noopener" class="btn btn-success w-100" style="border-radius:999px;font-weight:700;">
+            <a href="empreendedores/register.php" class="btn btn-success w-100" style="border-radius:999px;font-weight:700;">
               <i class="bi bi-pencil-square me-1"></i> Inscreva-se
             </a>
           </div>
@@ -232,7 +251,7 @@ include __DIR__ . '/app/views/public/header_public.php';
           <div class="reg-article">
             <span class="reg-article-num">3.2</span>
             Período de inscrições: <strong>11/05/2026 a 24/07/2026 às 23h59</strong>, por meio da plataforma
-            <a href="https://vitrine.impactospositivos.com" target="_blank" rel="noopener" class="reg-ext-link">vitrine.impactospositivos.com</a>.
+            <a href="https://impactospositivos.com" target="_blank" rel="noopener" class="reg-ext-link">impactospositivos.com</a>.
           </div>
           <div class="reg-article"><span class="reg-article-num">3.3</span> O Cadastro foi desenvolvido em parceria com o Sebrae Nacional, Enimpacto e CADImpacto — plataforma do Ministério do Desenvolvimento, Indústria, Comércio e Serviços (MDIC). Além dos dados da pessoa jurídica, serão solicitados dados pessoais do responsável: nome completo, CPF, data de nascimento, e-mail, telefone, gênero, formação acadêmica e endereço completo.</div>
           <div class="reg-article"><span class="reg-article-num">3.4</span> As informações pessoais fornecidas serão utilizadas para atender a sua solicitação e poderão ser compartilhadas com terceiros conforme a política do usuário.</div>
@@ -365,7 +384,7 @@ include __DIR__ . '/app/views/public/header_public.php';
                 </div>
                 <div class="reg-desempate-item">
                   <span class="reg-desempate-num">4°</span>
-                  <span>Score geral do negócio — tabela <code>scores_negocios</code> (maior vence)</span>
+                  <span>Score Impactos Positivos (maior vence)</span>
                 </div>
                 <div class="reg-desempate-item">
                   <span class="reg-desempate-num">5°</span>
@@ -490,7 +509,7 @@ include __DIR__ . '/app/views/public/header_public.php';
                 </div>
                 <div class="reg-desempate-item">
                   <span class="reg-desempate-num">4°</span>
-                  <span>Score geral — tabela <code>scores_negocios</code> (maior vence)</span>
+                  <span>Score Impactos Positivos (maior vence)</span>
                 </div>
                 <div class="reg-desempate-item">
                   <span class="reg-desempate-num">5°</span>
@@ -650,7 +669,7 @@ include __DIR__ . '/app/views/public/header_public.php';
               <p class="cta-sub mb-0">Inscrições abertas de 11/05 a 24/07/2026. Faça parte do Prêmio Impactos Positivos 2026!</p>
             </div>
             <div class="col-md-4 text-md-end">
-              <a href="https://vitrine.impactospositivos.com" target="_blank" rel="noopener" class="btn-cta-parceiro">
+              <a href="https://impactospositivos.com" target="_blank" rel="noopener" class="btn-cta-parceiro">
                 <i class="bi bi-pencil-square me-2"></i> Inscreva-se agora
               </a>
             </div>

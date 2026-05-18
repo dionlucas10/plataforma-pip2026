@@ -1,5 +1,12 @@
 <?php
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 $config = require __DIR__ . '/app/config/db.php';
 
 $pdo = new PDO(
@@ -24,7 +31,7 @@ $f_eixo = trim($_GET['eixo'] ?? '');
 $f_setor = trim($_GET['setor'] ?? '');
 $f_perfil = trim($_GET['perfil'] ?? '');
 
-// Busca TODOS os parceiros (com ou sem perfil publicado)
+// Busca TODOS os parceiros ATIVOS (com ou sem perfil publicado)
 $sql = "
     SELECT 
         p.id,
@@ -35,12 +42,15 @@ $sql = "
         pp.imagem_capa_url,
         pp.perfil_publicado,
         pp.logo_url AS logo_perfil_url,
+        c.logo_url AS logo_contrato_url,
         pi.eixos_interesse,
         pi.setores_interesse,
         pi.perfil_impacto
     FROM parceiros p
     LEFT JOIN parceiros_perfil pp ON pp.parceiro_id = p.id
+    LEFT JOIN parceiro_contrato c ON c.parceiro_id = p.id
     LEFT JOIN parceiro_interesses pi ON pi.parceiro_id = p.id
+    WHERE p.status = 'ativo'
 ";
 
 $params = [];
@@ -75,11 +85,13 @@ $parceiros = array_values(array_filter($parceirosBrutos, function ($parceiro) us
     return true;
 }));
 
-// Filtros disponíveis (baseados em todos os parceiros)
+// Filtros disponíveis (baseados em parceiros ativos)
 $ods = $pdo->query("
     SELECT DISTINCT o.id, o.nome, o.icone_url
     FROM parceiro_ods po
     INNER JOIN ods o ON o.id = po.ods_id
+    INNER JOIN parceiros p ON p.id = po.parceiro_id
+    WHERE p.status = 'ativo'
     ORDER BY o.id
 ")->fetchAll();
 
@@ -89,6 +101,8 @@ $stmtFiltros = $pdo->query("
         pi.setores_interesse,
         pi.perfil_impacto
     FROM parceiro_interesses pi
+    INNER JOIN parceiros p ON p.id = pi.parceiro_id
+    WHERE p.status = 'ativo'
 ");
 $filtrosRaw = $stmtFiltros->fetchAll();
 
@@ -123,8 +137,9 @@ include __DIR__ . '/app/views/public/header_public.php';
 
     <div class="vitrine-nacional-hero mb-4">
         <div class="vitrine-nacional-hero-content">
-            <span class="vitrine-kicker">Rede de Impacto</span>
-            <h1 class="vitrine-title mb-2">Parceiros da Plataforma</h1>
+            <h1 class="vitrine-title mb-2">
+                <em>parceiros </em> <small>de</small><br>
+                <em>impacto</em></h1>
             <p class="vitrine-subtitle mb-0">
                 Conheça parceiros com perfil público ativo, explore conexões estratégicas e descubra organizações alinhadas a agendas de impacto.
             </p>
@@ -198,7 +213,7 @@ include __DIR__ . '/app/views/public/header_public.php';
                 </div>
 
                 <div class="col-md-6 col-xl-3">
-                    <label for="filtro-eixo" class="vitrine-filtro-label">Eixos temáticos adicionais</label>
+                    <label for="filtro-eixo" class="vitrine-filtro-label">Eixos temáticos</label>
                     <select id="filtro-eixo" name="eixo" class="form-select vitrine-select">
                         <option value="">Todos</option>
                         <?php foreach ($eixos as $eixo): ?>
@@ -248,7 +263,7 @@ include __DIR__ . '/app/views/public/header_public.php';
             <?php foreach ($parceiros as $p): ?>
                 <?php
                 $nome            = $p['nome_fantasia'] ?: ($p['razao_social'] ?? 'Parceiro');
-                $logo            = $p['logo_perfil_url'] ?? '';
+                $logo            = $p['logo_perfil_url'] ?: ($p['logo_contrato_url'] ?? '');
                 $capa            = $p['imagem_capa_url'] ?? '';
                 $perfilPublicado = !empty($p['perfil_publicado']);
                 ?>
@@ -317,9 +332,6 @@ include __DIR__ . '/app/views/public/header_public.php';
                                     Ver perfil
                                 </a>
                             <?php endif; ?>
-                            <a href="#" class="btn btn-outline-secondary">
-                                Conectar
-                            </a>
                         </div>
                     </article>
                 </div>

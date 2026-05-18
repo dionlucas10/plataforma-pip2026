@@ -1,9 +1,27 @@
 <?php
-// /cronograma.php
-declare(strict_types=1);
+// ✅ Inicia sessão
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// ✅ Ativa erros
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+$config = require __DIR__ . '/app/config/db.php';
+
+$pdo = new PDO(
+    "mysql:host={$config['host']};dbname={$config['dbname']};port={$config['port']};charset={$config['charset']}",
+    $config['user'],
+    $config['pass'],
+    [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+    ]
+);
 
 $pageTitle = 'Cronograma Oficial 2026 | Prêmio Impactos Positivos';
-
 include __DIR__ . '/app/views/public/header_public.php';
 ?>
 
@@ -26,7 +44,7 @@ include __DIR__ . '/app/views/public/header_public.php';
           Acompanhe todas as datas e etapas do Prêmio — desde a abertura das inscrições até a cerimônia de premiação.
         </p>
         <div class="d-flex flex-wrap gap-2">
-          <a href="https://vitrine.impactospositivos.com" target="_blank" rel="noopener" class="btn-premiacao-primary">
+          <a href="empreendedores/register.php" class="btn-premiacao-primary">
             <i class="bi bi-pencil-square me-2"></i> Inscreva-se agora
           </a>
           <a href="regulamento-do-premio.php" class="btn-premiacao-outline">
@@ -85,7 +103,7 @@ include __DIR__ . '/app/views/public/header_public.php';
         'descricao' => 'Lançamento oficial do Prêmio Impactos Positivos 2026! Negócios e projetos já podem se inscrever gratuitamente na plataforma, escolhendo uma das quatro categorias: <strong>Ideação, Tração, Operação</strong> e <strong>Dinamizador do Ecossistema</strong>.',
         'detalhe'   => 'Acesse a plataforma, complete 100% do perfil do seu negócio e finalize a inscrição.',
         'cta_label' => 'Inscreva-se agora',
-        'cta_url'   => 'https://vitrine.impactospositivos.com',
+        'cta_url'   => 'https://impactospositivos.com',
         'cta_ext'   => true,
       ],
       [
@@ -302,7 +320,7 @@ include __DIR__ . '/app/views/public/header_public.php';
           <p class="cta-sub mb-0">Inscrições abertas de 11/05 a 24/07/2026. Faça parte do Prêmio Impactos Positivos 2026!</p>
         </div>
         <div class="col-md-4 text-md-end">
-          <a href="https://vitrine.impactospositivos.com" target="_blank" rel="noopener" class="btn-cta-parceiro">
+          <a href="empreendedores/register.php" class="btn-cta-parceiro">
             <i class="bi bi-pencil-square me-2"></i> Inscreva-se agora
           </a>
         </div>
