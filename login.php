@@ -1,152 +1,124 @@
 <?php
 session_start();
-$pageTitle = "Login - Impactos Positivos";
+$pageTitle = 'Login — Impactos Positivos';
+$redirect  = trim($_GET['redirect'] ?? '');
+$redirect  = ($redirect && str_starts_with($redirect, '/')) ? $redirect : '';
 include __DIR__ . '/app/views/public/header_public.php';
 ?>
 
 <div class="container my-5">
   <div class="row justify-content-center">
-    <div class="col-lg-8">
-      <div class="card shadow-sm">
-        <div class="card-header bg-primary text-white">
-          <h2 class="h5 mb-0">Selecione seu Perfil de Impacto, faça o login ou crie sua conta</h2>
+    <div class="col-sm-10 col-md-8 col-lg-6 col-xl-5">
+
+      <!-- Cabeçalho -->
+      <div class="text-center mb-4">
+        <i class="bi bi-person-circle" style="font-size:2.8rem; color:#1E3425;"></i>
+        <h1 class="h4 fw-bold mt-2 mb-1" style="color:#1E3425;">Bem-vindo de volta</h1>
+        <p class="text-muted mb-0" style="font-size:.9rem;">
+          Empreendedores, Parceiros e Sociedade Civil acessam pela mesma tela.
+        </p>
+      </div>
+
+      <!-- Alerta de erro -->
+      <?php if (!empty($_SESSION['login_error'])): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <?= htmlspecialchars($_SESSION['login_error'], ENT_QUOTES, 'UTF-8') ?>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
         </div>
-        <div class="card-body">
+        <?php unset($_SESSION['login_error']); ?>
+      <?php endif; ?>
 
-          <!-- Exibe alerta de erro -->
-          <?php if (!empty($_SESSION['login_error'])): ?>
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-              <?= htmlspecialchars($_SESSION['login_error'], ENT_QUOTES, 'UTF-8') ?>
-              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
-            </div>
-            <?php unset($_SESSION['login_error']); ?>
-          <?php endif; ?>
+      <!-- Formulário único -->
+      <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-4">
 
-          <!-- Nav tabs -->
-                    <!-- Nav tabs -->
-          <ul class="nav nav-tabs" id="loginTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-              <!-- Mudei data-bs-target para #pane-empreendedor -->
-              <button class="nav-link active" id="empreendedor-tab" data-bs-toggle="tab" data-bs-target="#pane-empreendedor" type="button" role="tab" aria-controls="pane-empreendedor" aria-selected="true">
-                Negócio de Impacto
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <!-- Mudei data-bs-target para #pane-parceiro -->
-              <button class="nav-link" id="parceiro-tab" data-bs-toggle="tab" data-bs-target="#pane-parceiro" type="button" role="tab" aria-controls="pane-parceiro" aria-selected="false">
-                Parceiro
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <!-- Mudei data-bs-target para #pane-sociedade -->
-              <button class="nav-link" id="sociedade-tab" data-bs-toggle="tab" data-bs-target="#pane-sociedade" type="button" role="tab" aria-controls="pane-sociedade" aria-selected="false">
-                Sociedade Civil
-              </button>
-            </li>
-          </ul>
+          <form method="POST" action="/auth/processar_login_unificado.php" novalidate>
+            <?php if ($redirect): ?>
+              <input type="hidden" name="redirect" value="<?= htmlspecialchars($redirect, ENT_QUOTES) ?>">
+            <?php endif; ?>
 
-          <!-- Tab content -->
-          <div class="tab-content mt-3" id="loginTabsContent">
-
-            <!-- Empreendedor -->
-            <!-- ID alterado para pane-empreendedor -->
-            <div class="tab-pane fade show active" id="pane-empreendedor" role="tabpanel" aria-labelledby="empreendedor-tab">
-              <div class="alert alert-light border shadow-sm mb-4">
-                <p class="mb-0 text-muted small">
-                    <i class="bi bi-rocket-takeoff-fill text-primary me-2"></i>
-                    <strong>Empreendedor:</strong> Gerencie seu perfil, concorra ao Prêmio e coloque seu negócio no radar de parceiros e investidores.
-                </p>
+            <div class="mb-3">
+              <label for="login" class="form-label fw-semibold">E-mail, CPF ou CNPJ</label>
+              <input
+                type="text"
+                id="login"
+                name="login"
+                class="form-control form-control-lg"
+                placeholder="seu@email.com ou CPF/CNPJ"
+                autocomplete="username"
+                required
+              >
+              <div class="form-text">
+                Empreendedor: e-mail &nbsp;·&nbsp; Parceiro: e-mail ou CNPJ &nbsp;·&nbsp; Sociedade Civil: e-mail ou CPF
               </div>
-              <?php include __DIR__ . '/app/views/forms/form-login_empreendedor.php'; ?>
             </div>
 
-            <!-- Apoiador -->
-            <!-- ID alterado para pane-parceiro -->
-            <div class="tab-pane fade" id="pane-parceiro" role="tabpanel" aria-labelledby="parceiro-tab">
-              <div class="alert alert-light border shadow-sm mb-4">
-                <p class="mb-0 text-muted small">
-                    <i class="bi bi-diagram-3-fill text-primary me-2"></i>
-                    <strong>Parceiro:</strong> Acesse seu painel para descobrir, fomentar e apoiar negócios alinhados aos objetivos e valores da sua instituição.
-                </p>
+            <div class="mb-4">
+              <label for="senha" class="form-label fw-semibold">Senha</label>
+              <div class="input-group">
+                <input
+                  type="password"
+                  id="senha"
+                  name="senha"
+                  class="form-control form-control-lg"
+                  placeholder="Sua senha"
+                  autocomplete="current-password"
+                  required
+                >
+                <button class="btn btn-outline-secondary toggle-password" type="button" data-target="senha" aria-label="Mostrar/ocultar senha">
+                  <i class="bi bi-eye"></i>
+                </button>
               </div>
-              <?php include __DIR__ . '/app/views/forms/form-login_parceiro.php'; ?>
             </div>
 
-            <!-- Comunidade Civil -->
-            <!-- ID alterado para pane-sociedade -->
-            <div class="tab-pane fade" id="pane-sociedade" role="tabpanel" aria-labelledby="sociedade-tab">
-              <div class="alert alert-light border shadow-sm mb-4">
-                <p class="mb-0 text-muted small">
-                    <i class="bi bi-people-fill text-primary me-2"></i>
-                    <strong>Sociedade Civil:</strong> Entre para votar nos negócios, dar visibilidade a quem transforma o mundo e descobrir formas de apoiar o ecossistema.
-                </p>
-              </div>
-              <?php include __DIR__ . '/app/views/forms/form-login_sociedade.php'; ?>
+            <div class="d-grid">
+              <button type="submit" class="btn btn-lg fw-semibold" style="background:#1E3425; color:#fff;">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Entrar
+              </button>
             </div>
+          </form>
 
+          <hr class="my-4">
+
+          <!-- Links de cadastro por perfil -->
+          <p class="text-center text-muted mb-2" style="font-size:.82rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">Ainda não tem conta?</p>
+          <div class="d-flex flex-column gap-2">
+            <a href="/empreendedores/cadastro.php" class="btn btn-outline-success btn-sm">
+              <i class="bi bi-rocket-takeoff me-2"></i>Cadastrar como Negócio de Impacto
+            </a>
+            <a href="/parceiros/cadastro.php" class="btn btn-outline-primary btn-sm">
+              <i class="bi bi-diagram-3 me-2"></i>Cadastrar como Parceiro
+            </a>
+            <a href="/sociedade_civil/cadastro.php" class="btn btn-outline-secondary btn-sm">
+              <i class="bi bi-people me-2"></i>Cadastrar como Sociedade Civil
+            </a>
           </div>
-
 
         </div>
       </div>
+      <!-- fim card -->
+
     </div>
   </div>
 </div>
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  const triggerTabList = [].slice.call(document.querySelectorAll('#loginTabs button'));
-  triggerTabList.forEach(function(triggerEl) {
-    triggerEl.addEventListener('click', function(e) {
-      e.preventDefault();
-      const targetId = this.getAttribute('data-bs-target');
-      
-      // Remove active de todos os botões e panes
-      document.querySelectorAll('#loginTabs button').forEach(btn => {
-        btn.classList.remove('active');
-        btn.setAttribute('aria-selected', 'false');
-      });
-      document.querySelectorAll('#loginTabsContent .tab-pane').forEach(pane => {
-        pane.classList.remove('show', 'active');
-      });
-      
-      // Adiciona active ao botão e pane clicado
-      this.classList.add('active');
-      this.setAttribute('aria-selected', 'true');
-      document.querySelector(targetId).classList.add('show', 'active');
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.toggle-password').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var input = document.getElementById(this.getAttribute('data-target'));
+      var icon  = this.querySelector('i');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('bi-eye', 'bi-eye-slash');
+      } else {
+        input.type = 'password';
+        icon.classList.replace('bi-eye-slash', 'bi-eye');
+      }
     });
   });
 });
 </script>
 
-<!-- Adicione isso no final do seu login.php -->
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    // Seleciona todos os botões de visualizar senha
-    const togglePasswordBtns = document.querySelectorAll('.toggle-password');
-    
-    togglePasswordBtns.forEach(button => {
-        button.addEventListener('click', function() {
-            // Pega o ID do input de senha através do data-target do botão
-            const targetId = this.getAttribute('data-target');
-            const passwordInput = document.getElementById(targetId);
-            const icon = this.querySelector('i');
-            
-            // Alterna o tipo do input e o ícone
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                icon.classList.remove('bi-eye');
-                icon.classList.add('bi-eye-slash');
-            } else {
-                passwordInput.type = 'password';
-                icon.classList.remove('bi-eye-slash');
-                icon.classList.add('bi-eye');
-            }
-        });
-    });
-});
-</script>
-
-
-<?php
-include __DIR__ . '/app/views/public/footer_public.php';
-?>
+<?php include __DIR__ . '/app/views/public/footer_public.php'; ?>
