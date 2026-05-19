@@ -103,7 +103,7 @@ function labelTipoFase(string $tipo): string
  * Classificatória 1 → 'elegivel' OU 'classificada_fase_1' (permite re-apuração)
  * Classificatória N → 'classificada_fase_(N-1)' OU 'classificada_fase_N'
  *                     (o segundo cobre re-apurações da mesma rodada)
- */
+ */ 
 function buildStatusPool(string $tipoFase, int $rodada): string
 {
     if ($tipoFase === 'final') {

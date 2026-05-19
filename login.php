@@ -1,106 +1,156 @@
 <?php
 session_start();
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+$config = require __DIR__ . '/app/config/db.php';
+$pdo = new PDO(
+    "mysql:host={$config['host']};dbname={$config['dbname']};port={$config['port']};charset={$config['charset']}",
+    $config['user'],
+    $config['pass'],
+    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+);
 $pageTitle = 'Login — Impactos Positivos';
 $redirect  = trim($_GET['redirect'] ?? '');
 $redirect  = ($redirect && str_starts_with($redirect, '/')) ? $redirect : '';
 include __DIR__ . '/app/views/public/header_public.php';
 ?>
 
-<div class="container my-5">
-  <div class="row justify-content-center">
-    <div class="col-sm-10 col-md-8 col-lg-6 col-xl-5">
+<div class="container-fluid px-3 px-md-4 px-lg-5">
+    <div class="ip-login-wrap">
 
-      <!-- Cabeçalho -->
-      <div class="text-center mb-4">
-        <i class="bi bi-person-circle" style="font-size:2.8rem; color:#1E3425;"></i>
-        <h1 class="h4 fw-bold mt-2 mb-1" style="color:#1E3425;">Bem-vindo de volta</h1>
-        <p class="text-muted mb-0" style="font-size:.9rem;">
-          Empreendedores, Parceiros e Sociedade Civil acessam pela mesma tela.
-        </p>
-      </div>
+    <!-- ══════════════ COLUNA ESQUERDA — LOGIN ══════════════ -->
+    <div class="ip-login-col">
 
-      <!-- Alerta de erro -->
-      <?php if (!empty($_SESSION['login_error'])): ?>
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-          <i class="bi bi-exclamation-triangle-fill me-2"></i>
-          <?= htmlspecialchars($_SESSION['login_error'], ENT_QUOTES, 'UTF-8') ?>
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        <div class="ip-brand-badge">
+        <i class="bi bi-person-circle"></i>
+        <span>Login do usuário</span>
+        </div>
+
+        <h1>Bem-vindo de volta!</h1>
+        <p class="ip-sub">Entre com suas credenciais para acessar a plataforma.</p>
+
+        <!-- Alerta de erro -->
+        <?php if (!empty($_SESSION['login_error'])): ?>
+        <div class="ip-alert-error" role="alert">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span><?= htmlspecialchars($_SESSION['login_error'], ENT_QUOTES, 'UTF-8') ?></span>
+            <button type="button" onclick="this.closest('.ip-alert-error').remove()" aria-label="Fechar">
+            <i class="bi bi-x-lg"></i>
+            </button>
         </div>
         <?php unset($_SESSION['login_error']); ?>
-      <?php endif; ?>
+        <?php endif; ?>
 
-      <!-- Formulário único -->
-      <div class="card shadow-sm border-0 rounded-4">
-        <div class="card-body p-4">
+        <!-- Formulário único -->
+        <form method="POST" action="/auth/processar_login_unificado.php" novalidate>
+        <?php if ($redirect): ?>
+            <input type="hidden" name="redirect" value="<?= htmlspecialchars($redirect, ENT_QUOTES) ?>">
+        <?php endif; ?>
 
-          <form method="POST" action="/auth/processar_login_unificado.php" novalidate>
-            <?php if ($redirect): ?>
-              <input type="hidden" name="redirect" value="<?= htmlspecialchars($redirect, ENT_QUOTES) ?>">
-            <?php endif; ?>
-
-            <div class="mb-3">
-              <label for="login" class="form-label fw-semibold">E-mail, CPF ou CNPJ</label>
-              <input
+        <div class="ip-field">
+            <label for="login">E-mail, CPF ou CNPJ</label>
+            <div class="input-wrap">
+            <input
                 type="text"
                 id="login"
                 name="login"
-                class="form-control form-control-lg"
                 placeholder="seu@email.com ou CPF/CNPJ"
                 autocomplete="username"
                 required
-              >
-              <div class="form-text">
-                Empreendedor: e-mail &nbsp;·&nbsp; Parceiro: e-mail ou CNPJ &nbsp;·&nbsp; Sociedade Civil: e-mail ou CPF
-              </div>
+            >
             </div>
-
-            <div class="mb-4">
-              <label for="senha" class="form-label fw-semibold">Senha</label>
-              <div class="input-group">
-                <input
-                  type="password"
-                  id="senha"
-                  name="senha"
-                  class="form-control form-control-lg"
-                  placeholder="Sua senha"
-                  autocomplete="current-password"
-                  required
-                >
-                <button class="btn btn-outline-secondary toggle-password" type="button" data-target="senha" aria-label="Mostrar/ocultar senha">
-                  <i class="bi bi-eye"></i>
-                </button>
-              </div>
-            </div>
-
-            <div class="d-grid">
-              <button type="submit" class="btn btn-lg fw-semibold" style="background:#1E3425; color:#fff;">
-                <i class="bi bi-box-arrow-in-right me-2"></i>Entrar
-              </button>
-            </div>
-          </form>
-
-          <hr class="my-4">
-
-          <!-- Links de cadastro por perfil -->
-          <p class="text-center text-muted mb-2" style="font-size:.82rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">Ainda não tem conta?</p>
-          <div class="d-flex flex-column gap-2">
-            <a href="/empreendedores/cadastro.php" class="btn btn-outline-success btn-sm">
-              <i class="bi bi-rocket-takeoff me-2"></i>Cadastrar como Negócio de Impacto
-            </a>
-            <a href="/parceiros/cadastro.php" class="btn btn-outline-primary btn-sm">
-              <i class="bi bi-diagram-3 me-2"></i>Cadastrar como Parceiro
-            </a>
-            <a href="/sociedade_civil/cadastro.php" class="btn btn-outline-secondary btn-sm">
-              <i class="bi bi-people me-2"></i>Cadastrar como Sociedade Civil
-            </a>
-          </div>
-
+            <p class="ip-hint">Empreendedor: E-mail &nbsp;·&nbsp; Parceiro: E-mail ou CNPJ &nbsp;·&nbsp; Sociedade Civil: E-mail ou CPF</p>
         </div>
-      </div>
-      <!-- fim card -->
+
+        <div class="ip-field">
+            <label for="senha">Senha</label>
+            <div class="input-wrap">
+            <input
+                type="password"
+                id="senha"
+                name="senha"
+                placeholder="Sua senha"
+                autocomplete="current-password"
+                required
+            >
+            <button class="ip-eye toggle-password" type="button" data-target="senha" aria-label="Mostrar/ocultar senha">
+                <i class="bi bi-eye"></i>
+            </button>
+            </div>
+        </div>
+
+        <div class="ip-forgot">
+            <a href="/auth/forgot_password_form.php">Esqueci minha senha</a>
+        </div>
+
+        <button type="submit" class="ip-btn-login">
+            <i class="bi bi-box-arrow-in-right"></i>
+            Entrar na plataforma
+        </button>
+        </form>
+
+        <!-- Divisor visível apenas em mobile -->
+        <div class="ip-divider-mobile">
+        <span></span><p>Ainda não tem conta?</p><span></span>
+        </div>
 
     </div>
-  </div>
+    <!-- fim coluna login -->
+
+
+    <!-- ══════════════ COLUNA DIREITA — CADASTRO ══════════════ -->
+    <div class="ip-register-col">
+
+        <div class="ip-reg-header">
+        <p class="ip-eyebrow">Ainda não tem conta?</p>
+        <h2>Escolha seu perfil<br>e cadastre-se</h2>
+        <p>Selecione o tipo de conta que melhor representa você ou sua organização para começar.</p>
+        </div>
+
+        <div class="ip-profile-cards">
+
+        <a href="/empreendedores/register.php" class="ip-profile-card negocio">
+            <div class="ip-card-icon">
+            <i class="bi bi-rocket-takeoff-fill"></i>
+            </div>
+            <div class="ip-card-text">
+            <strong>Negócio de Impacto</strong>
+            <span>Empresas e startups com propósito social ou ambiental</span>
+            </div>
+            <i class="bi bi-arrow-right ip-card-arrow"></i>
+        </a>
+
+        <a href="/parceiros/cadastro.php" class="ip-profile-card parceiro">
+            <div class="ip-card-icon">
+            <i class="bi bi-diagram-3-fill"></i>
+            </div>
+            <div class="ip-card-text">
+            <strong>Parceiro</strong>
+            <span>Organizações, fundações e investidores de impacto</span>
+            </div>
+            <i class="bi bi-arrow-right ip-card-arrow"></i>
+        </a>
+
+        <a href="cadastro.php" class="ip-profile-card sociedade">
+            <div class="ip-card-icon">
+            <i class="bi bi-people-fill"></i>
+            </div>
+            <div class="ip-card-text">
+            <strong>Sociedade Civil</strong>
+            <span>Pessoas físicas engajadas em transformação social</span>
+            </div>
+            <i class="bi bi-arrow-right ip-card-arrow"></i>
+        </a>
+
+        </div>
+
+    </div>
+    <!-- fim coluna cadastro -->
+
+    </div>
 </div>
 
 <script>
