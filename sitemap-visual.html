@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sitemap — Plataforma PIP 2026</title>
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f6f2; --surface: #f9f8f5; --surface2: #fbfbf9;
+    --border: rgba(40,37,29,0.1); --text: #28251d; --muted: #7a7974;
+    --primary: #01696f; --primary-h: #0c4e54;
+    --warn: #964219; --admin: #7a39bb; --emp: #01696f; --parc: #437a22; --soc: #006494;
+    --pub: #d19900; --proc: #a12c7b;
+    --radius: 8px; --shadow: 0 2px 8px rgba(40,37,29,0.08);
+    --font: 'Satoshi', system-ui, sans-serif;
+  }
+  [data-theme="dark"] {
+    --bg: #171614; --surface: #1c1b19; --surface2: #201f1d;
+    --border: rgba(205,204,202,0.1); --text: #cdccca; --muted: #797876;
+    --primary: #4f98a3;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; padding: 2rem 1rem 4rem; }
+  .header { max-width: 1100px; margin: 0 auto 2.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+  .logo { display: flex; align-items: center; gap: .75rem; }
+  .logo svg { width: 36px; height: 36px; color: var(--primary); }
+  .logo-text { font-size: 1.25rem; font-weight: 700; color: var(--text); }
+  .logo-sub { font-size: .8rem; color: var(--muted); }
+  .theme-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 99px; padding: .4rem .9rem; font-size: .8rem; color: var(--muted); cursor: pointer; }
+  .legend { max-width: 1100px; margin: 0 auto 2rem; display: flex; flex-wrap: wrap; gap: .5rem; }
+  .badge { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .7rem; border-radius: 99px; font-size: .73rem; font-weight: 500; }
+  .b-pub   { background: #fdf5e0; color: #6b4c00; }
+  .b-emp   { background: #e0f0f0; color: #015358; }
+  .b-parc  { background: #e5f0db; color: #2a5010; }
+  .b-soc   { background: #daeaf5; color: #00446a; }
+  .b-admin { background: #ede5f7; color: #4c1f8a; }
+  .b-proc  { background: #f5e0ef; color: #6b1050; }
+  [data-theme="dark"] .b-pub   { background: #3a2e10; color: #e8c55a; }
+  [data-theme="dark"] .b-emp   { background: #1a3030; color: #7dcad2; }
+  [data-theme="dark"] .b-parc  { background: #1c2e18; color: #8ec96a; }
+  [data-theme="dark"] .b-soc   { background: #16303e; color: #6cb8e8; }
+  [data-theme="dark"] .b-admin { background: #28194a; color: #c49ff5; }
+  [data-theme="dark"] .b-proc  { background: #361426; color: #df95c5; }
+  .container { max-width: 1100px; margin: 0 auto; display: grid; gap: 1.5rem; }
+  .section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+  .section-header { padding: 1rem 1.25rem; display: flex; align-items: center; gap: .65rem; border-bottom: 1px solid var(--border); cursor: pointer; }
+  .section-icon { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 1rem; flex-shrink: 0; }
+  .section-title { font-size: 1rem; font-weight: 700; }
+  .section-count { margin-left: auto; font-size: .78rem; color: var(--muted); }
+  .section-body { padding: 1rem 1.25rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: .6rem; }
+  .node { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: .55rem .8rem; display: flex; align-items: flex-start; gap: .5rem; transition: box-shadow .15s; }
+  .node:hover { box-shadow: 0 2px 8px rgba(40,37,29,.1); }
+  .node-path { font-size: .78rem; color: var(--muted); font-family: monospace; word-break: break-all; flex: 1; }
+  .node-name { font-size: .88rem; font-weight: 500; color: var(--text); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: .35rem; }
+  .d-pub   { background: var(--pub); }
+  .d-emp   { background: var(--emp); }
+  .d-parc  { background: var(--parc); }
+  .d-soc   { background: var(--soc); }
+  .d-admin { background: var(--admin); }
+  .d-proc  { background: var(--proc); }
+  .icon-pub   { background: #fdf5e0; color: #6b4c00; }
+  .icon-emp   { background: #e0f0f0; color: #015358; }
+  .icon-parc  { background: #e5f0db; color: #2a5010; }
+  .icon-soc   { background: #daeaf5; color: #00446a; }
+  .icon-admin { background: #ede5f7; color: #4c1f8a; }
+  .icon-auth  { background: #fde8e8; color: #7a0000; }
+  footer { max-width: 1100px; margin: 2.5rem auto 0; font-size: .78rem; color: var(--muted); text-align: center; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">
+    <svg viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="2" aria-label="PIP 2026">
+      <rect x="3" y="3" width="30" height="30" rx="6"/>
+      <path d="M10 18h16M18 10v16" stroke-linecap="round"/>
+    </svg>
+    <div>
+      <div class="logo-text">Plataforma PIP 2026</div>
+      <div class="logo-sub">Sitemap completo · gerado em 19/05/2026</div>
+    </div>
+  </div>
+  <button class="theme-btn" data-theme-toggle>🌙 Modo escuro</button>
+</div>
+
+<div class="legend">
+  <span class="badge b-pub">● Público</span>
+  <span class="badge b-emp">● Empreendedores</span>
+  <span class="badge b-parc">● Parceiros</span>
+  <span class="badge b-soc">● Sociedade Civil</span>
+  <span class="badge b-admin">● Administração</span>
+  <span class="badge b-proc">● Processadores (sem UI)</span>
+</div>
+
+<div class="container">
+
+<!-- PÚBLICO -->
+<div class="section">
+  <div class="section-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'grid':'none'">
+    <div class="section-icon icon-pub">🌐</div>
+    <span class="section-title">Páginas Públicas</span>
+    <span class="section-count">14 páginas</span>
+  </div>
+  <div class="section-body">
+    <div class="node"><span class="dot d-pub"></span><div><div class="node-name">Home / Início</div><div class="node-path">/index.php</div></div></div>
+    <div class="node"><span class="dot d-pub"></span><div><div class="node-name">Login Unificado</div><div class="node-path">/login.php</div></div></div>
+    <div class="node"><span class="dot d-pub"></span><div><div class="node-name">Cronograma</div><div class="node-path">/cronograma.php</div></div></div>
+    <div class="node"><span class="dot d-pub"></span><div><div class="node-name">Premiação</div><div class="node-path">/premiacao.php</div></div></div>
+    <div class="node"><span class="dot d-pub"></span><div><div class="node-name">Política de Privacidade</div><div class="node-path">/politica-privacidade.php</div></div></div>
+    <div class="node"><span class="dot d-pub"></span><div><div class="node-name">Termos de Uso</div><div class="node-path">/termos-uso.php</div></div></div>
+    <div class="node"><span class="dot d-pub"></span><div><div class="node-name">Regulamento do Prêmio</div><div class="node-path">/regulamento-do-premio.php</div></div></div>
+    <div class="node"><span class="dot d-pub"></span><div><div class="node-name">Vitrine Nacional (Negócios)</div><div class="node-path">/vitrine-nacional.php</div></div></div>
+    <div class="node"><span class="dot d-pub"></span><div><div class="node-name">Perfil Negócio</div><div class="node-path">/negocio.php</div></div></div>    
+    <div class="node"><span class="dot d-pub"></span><div><div class="node-name">Rede de Impacto (Vitrine Parceiros)</div><div class="node-path">/rede_de_impacto.php</div></div></div>
+    <div class="node"><span class="dot d-pub"></span><div><div class="node-name">Perfil Parceiro</div><div class="node-path">/perfil_parceiro.php</div></div></div>    
+    <div class="node"><span class="dot d-pub"></span><div><div class="node-name">Sobre o Ecossistema</div><div class="node-path">/sobre_o_ecossistema.php</div></div></div>
+    <div class="node"><span class="dot d-pub"></span><div><div class="node-name">Recuperação Senha</div><div class="node-path">/auth/forgot_password_form.php</div></div></div> 
+    <div class="node"><span class="dot d-pub"></span><div><div class="node-name">Redefinir Senha</div><div class="node-path">/auth/reset_password_form.php</div></div></div>        
+  </div>
+</div>
+
+<!-- AUTH -->
+<div class="section">
+  <div class="section-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'grid':'none'">
+    <div class="section-icon icon-auth">🔐</div>
+    <span class="section-title">Autenticação (auth/)</span>
+    <span class="section-count">2 processadores</span>
+  </div>
+  <div class="section-body">
+    <div class="node"><span class="dot d-proc"></span><div><div class="node-name">Login Unificado (novo)</div><div class="node-path">/auth/processar_login_unificado.php</div></div></div>
+    <div class="node"><span class="dot d-proc"></span><div><div class="node-name">Logout</div><div class="node-path">logout.php</div></div></div>
+    <div class="node"><span class="dot d-proc"></span><div><div class="node-name">Processar Cadastro Sociedade</div><div class="node-path">/auth/processar_cadastro_sociedade.php</div></div></div>
+  </div>
+</div>
+
+<!-- EMPREENDEDORES -->
+<div class="section">
+  <div class="section-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'grid':'none'">
+    <div class="section-icon icon-emp">🚀</div>
+    <span class="section-title">Área do Empreendedor (empreendedores/)</span>
+    <span class="section-count">9 arquivos</span>
+  </div>
+  <div class="section-body">
+    <div class="node"><span class="dot d-emp"></span><div><div class="node-name">Cadastrar Empreendedor</div><div class="node-path">/empreendedores/register.php</div></div></div>
+    <div class="node"><span class="dot d-proc"></span><div><div class="node-name">Salvar Empreendedor</div><div class="node-path">/empreendedores/store.php</div></div></div>
+    <div class="node"><span class="dot d-emp"></span><div><div class="node-name">Cadastro Sucesso</div><div class="node-path">/empreendedores/sucesso.php</div></div></div>
+    <div class="node"><span class="dot d-emp"></span><div><div class="node-name">Editar Conta</div><div class="node-path">/empreendedores/editar_conta.php</div></div></div>
+    <div class="node"><span class="dot d-emp"></span><div><div class="node-name">Dashboard</div><div class="node-path">/empreendedores/dashboard.php</div></div></div>
+    <div class="node"><span class="dot d-emp"></span><div><div class="node-name">Meus Negócios</div><div class="node-path">/empreendedores/meus-negocios.php</div></div></div>
+    <div class="node"><span class="dot d-emp"></span><div><div class="node-name">Minhas Inscrições – Premiação</div><div class="node-path">/empreendedores/minhas_inscricoes_premiacao.php</div></div></div>
+  </div>
+</div>
+
+<!-- PARCEIROS -->
+<div class="section">
+  <div class="section-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'grid':'none'">
+    <div class="section-icon icon-parc">🤝</div>
+    <span class="section-title">Área do Parceiro (parceiros/)</span>
+    <span class="section-count">ver repositório</span>
+  </div>
+  <div class="section-body">
+    <div class="node"><span class="dot d-parc"></span><div><div class="node-name">Dashboard</div><div class="node-path">/parceiros/dashboard.php</div></div></div>
+    <div class="node"><span class="dot d-parc"></span><div><div class="node-name">Minha Conta</div><div class="node-path">/parceiros/minha_conta.php</div></div></div>
+    <div class="node"><span class="dot d-parc"></span><div><div class="node-name">Cadastro Parceiro</div><div class="node-path">/parceiros/cadastro_parceiro.php</div></div></div>
+    <div class="node"><span class="dot d-parc"></span><div><div class="node-name">Carta de Parceria</div><div class="node-path">/parceiros/carta_parceria.php</div></div></div>
+    <div class="node"><span class="dot d-parc"></span><div><div class="node-name">Visualizar Negócio</div><div class="node-path">/parceiros/visualizar_negocio.php</div></div></div>
+    <div class="node"><span class="dot d-proc"></span><div><div class="node-name">Processar Login (legado)</div><div class="node-path">/parceiros/processar_login_parceiro.php</div></div></div>
+  </div>
+</div>
+
+<!-- SOCIEDADE CIVIL -->
+<div class="section">
+  <div class="section-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'grid':'none'">
+    <div class="section-icon icon-soc">🏛️</div>
+    <span class="section-title">Área da Sociedade Civil (sociedade_civil/)</span>
+    <span class="section-count">ver repositório</span>
+  </div>
+  <div class="section-body">
+    <div class="node"><span class="dot d-soc"></span><div><div class="node-name">Minha Conta</div><div class="node-path">/sociedade_civil/minha_conta.php</div></div></div>
+    <div class="node"><span class="dot d-soc"></span><div><div class="node-name">Votação Popular</div><div class="node-path">/sociedade_civil/votacao_popular.php</div></div></div>
+    <div class="node"><span class="dot d-soc"></span><div><div class="node-name">Cadastro</div><div class="node-path">/sociedade_civil/cadastro.php</div></div></div>
+    <div class="node"><span class="dot d-soc"></span><div><div class="node-name">Sucesso no Cadastro</div><div class="node-path">/cadastro_sucesso.php</div></div></div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div class="section">
+  <div class="section-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'grid':'none'">
+    <div class="section-icon icon-admin">⚙️</div>
+    <span class="section-title">Painel Administrativo (admin/)</span>
+    <span class="section-count">36 arquivos</span>
+  </div>
+  <div class="section-body">
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Login Admin</div><div class="node-path">/admin-login.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Dashboard</div><div class="node-path">/admin/dashboard.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Empreendedores</div><div class="node-path">/admin/empreendedores.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Criar Empreendedor</div><div class="node-path">/admin/create_empreendedor.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Editar Empreendedor</div><div class="node-path">/admin/editar_empreendedor.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Excluir Empreendedor</div><div class="node-path">/admin/excluir_empreendedor.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Importar Empreendedores</div><div class="node-path">/admin/importar_empreendedores.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Negócios</div><div class="node-path">/admin/negocios.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Aprovar Negócio</div><div class="node-path">/admin/aprovar_negocio.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Atribuir Negócio</div><div class="node-path">/admin/atribuir_negocio.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Visualizar Negócio</div><div class="node-path">/admin/visualizar_negocio.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Importar Negócios</div><div class="node-path">/admin/importar_negocios.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Parceiros</div><div class="node-path">/admin/parceiros.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Visualizar Parceiro</div><div class="node-path">/admin/visualizar_parceiro.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Visualizar Carta Parceiro</div><div class="node-path">/admin/visualizar_carta_parceiro.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Usuários</div><div class="node-path">/admin/usuarios.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Criar Usuário</div><div class="node-path">/admin/create_user.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Editar Usuário</div><div class="node-path">/admin/edit_user.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Excluir Usuário</div><div class="node-path">/admin/excluir_usuario.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Administradores</div><div class="node-path">/admin/administradores.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Notificações</div><div class="node-path">/admin/gerenciar_notificacoes.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">E-mail Templates</div><div class="node-path">/admin/email_templates.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Relatórios Negócios</div><div class="node-path">/admin/relatorios_negocios.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Premiação – Edições</div><div class="node-path">/admin/premiacao_edicoes.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Premiação – Categorias</div><div class="node-path">/admin/premiacao_categorias.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Premiação – Períodos</div><div class="node-path">/admin/premiacao_periodos.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Premiação – Inscrições</div><div class="node-path">/admin/premiacao_inscricoes.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Premiação – Júri</div><div class="node-path">/admin/premiacao_juri.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Premiação – Voto Popular</div><div class="node-path">/admin/premiacao_voto_popular.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Premiação – Voto Técnico</div><div class="node-path">/admin/premiacao_voto_tecnico.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Premiação – Apuração</div><div class="node-path">/admin/premiacao_apuracao.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Premiação – Resultados</div><div class="node-path">/admin/premiacao_resultados.php</div></div></div>
+    <div class="node"><span class="dot d-admin"></span><div><div class="node-name">Votos Técnicos</div><div class="node-path">/admin/votos_tecnicos.php</div></div></div>
+    <div class="node"><span class="dot d-proc"></span><div><div class="node-name">Processar Fila E-mails</div><div class="node-path">/admin/processar_fila_emails.php</div></div></div>
+    <div class="node"><span class="dot d-proc"></span><div><div class="node-name">Notificar Negócio</div><div class="node-path">/admin/notificar_negocio.php</div></div></div>
+    <div class="node"><span class="dot d-proc"></span><div><div class="node-name">Enviar E-mail Status</div><div class="node-path">/admin/enviar_email_status.php</div></div></div>
+    <div class="node"><span class="dot d-proc"></span><div><div class="node-name">Lembrete Parceiro</div><div class="node-path">/admin/processar_lembrete_parceiro.php</div></div></div>
+    <div class="node"><span class="dot d-proc"></span><div><div class="node-name">Recalcular Scores</div><div class="node-path">/admin/recalcular_scores.php</div></div></div>
+    <div class="node"><span class="dot d-proc"></span><div><div class="node-name">Reset Senha</div><div class="node-path">/admin/reset_password.php</div></div></div>
+    <div class="node"><span class="dot d-proc"></span><div><div class="node-name">Reset E-mail</div><div class="node-path">/admin/reset_email.php</div></div></div>
+  </div>
+</div>
+
+<!-- FORMULÁRIOS -->
+<div class="section">
+  <div class="section-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'grid':'none'">
+    <div class="section-icon" style="background:#f5e0ef;color:#6b1050">📋</div>
+    <span class="section-title">Formulários (app/views/forms/)</span>
+    <span class="section-count">partials – sem URL direta</span>
+  </div>
+  <div class="section-body">
+    <div class="node"><span class="dot d-proc"></span><div><div class="node-name">Login Empreendedor (legado)</div><div class="node-path">app/views/forms/form-login_empreendedor.php</div></div></div>
+    <div class="node"><span class="dot d-proc"></span><div><div class="node-name">Login Parceiro (legado)</div><div class="node-path">app/views/forms/form-login_parceiro.php</div></div></div>
+    <div class="node"><span class="dot d-proc"></span><div><div class="node-name">Login Sociedade (legado)</div><div class="node-path">app/views/forms/form-login_sociedade.php</div></div></div>
+  </div>
+</div>
+
+</div>
+
+<footer>Plataforma PIP 2026 · Sitemap gerado automaticamente a partir do repositório GitHub · danisilvafrontend/plataforma-pip2026</footer>
+
+<script>
+(function(){
+  const btn=document.querySelector('[data-theme-toggle]'),h=document.documentElement;
+  let d=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
+  h.setAttribute('data-theme',d);
+  btn.addEventListener('click',()=>{
+    d=d==='dark'?'light':'dark';
+    h.setAttribute('data-theme',d);
+    btn.textContent=d==='dark'?'☀️ Modo claro':'🌙 Modo escuro';
+  });
+})();
+</script>
+</body>
+</html>

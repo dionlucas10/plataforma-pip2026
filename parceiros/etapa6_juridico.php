@@ -1,5 +1,6 @@
 <?php
 session_start();
+$pageTitle = 'Etapa 6 Área Jurídica Parceiro';
 $config = require __DIR__ . '/../app/config/db.php';
 $pdo = new PDO(
     "mysql:host={$config['host']};dbname={$config['dbname']};port={$config['port']};charset={$config['charset']}",
@@ -117,7 +118,7 @@ include __DIR__ . '/../app/views/public/header_public.php';
                                 </p>
                             </div>
 
-                            <div class="row g-4">
+                            <div class="row g-2">
                                 <div class="col-md-6">
                                     <div class="parceiro-upload-card">
                                         <label class="form-label parceiro-step-label">Logomarca Oficial (PNG, JPG, SVG)</label>
@@ -129,8 +130,10 @@ include __DIR__ . '/../app/views/public/header_public.php';
                                                 Logomarca já enviada.
                                                 <a href="<?= htmlspecialchars($logo_atual) ?>" target="_blank" rel="noopener noreferrer">Visualizar</a>
                                             </div>
-                                        <?php else: ?>
-                                            <div class="form-text mt-2">Recomendamos arquivo com fundo transparente.</div>
+                                       <?php else: ?>
+                                            <div class="form-text mt-2">
+                                                <i class="bi bi-info-circle"></i> Use um arquivo com o logo recortado rente às bordas — sem margens ou espaços transparentes ao redor.
+                                            </div>
                                         <?php endif; ?>
                                     </div>
                                 </div>

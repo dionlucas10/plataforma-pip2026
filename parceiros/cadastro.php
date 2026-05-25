@@ -1,6 +1,7 @@
 <?php
 // Cadastro Parceiros /public_html/parceiros/cadastro.php
 session_start();
+$pageTitle = 'Cadastro Perceiro — Impactos Positivos';
 $config = require __DIR__ . '/../app/config/db.php';
 $pdo = new PDO(
     "mysql:host={$config['host']};dbname={$config['dbname']};port={$config['port']};charset={$config['charset']}",

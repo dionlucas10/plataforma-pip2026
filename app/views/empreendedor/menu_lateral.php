@@ -70,7 +70,7 @@ $isNegociosActive = str_contains($currentPage, 'meus-negocios')
 
     <li class="nav-item">
       <a class="emp-sidebar-link <?= str_contains($currentPage, 'vitrine') ? 'active' : '' ?>"
-         href="/vitrine_nacional.php">
+         href="/vitrine_de_impacto.php">
         <i class="bi bi-grid"></i> Vitrine Nacional
       </a>
     </li>

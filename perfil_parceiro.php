@@ -64,16 +64,27 @@ include __DIR__ . '/app/views/public/header_public.php';
 
 
 <!-- BANNER / CAPA -->
-<?php if (!empty($parceiro['imagem_capa_url'])): ?>
-    <div class="w-100" style="height: 250px; background-image: url('<?= htmlspecialchars($parceiro['imagem_capa_url']) ?>'); background-size: cover; background-position: center; background-repeat: no-repeat;">
-    </div>
-<?php else: ?>
-    <div class="bg-primary bg-gradient w-100" style="height: 200px;">
-    </div>
-<?php endif; ?>
+<div class="parceiro-cover <?= !empty($parceiro['imagem_capa_url']) ? '' : 'parceiro-cover--padrao' ?>">
+    <?php if (!empty($parceiro['imagem_capa_url'])): ?>
+        <img
+            src="<?= htmlspecialchars($parceiro['imagem_capa_url']) ?>"
+            alt="Capa do perfil <?= htmlspecialchars($parceiro['nome'] ?? '') ?>"
+            class="parceiro-cover-img"
+        >
+    <?php else: ?>
+        <div class="parceiro-cover-fallback">
+            <img
+                src="/assets/images/moldura.png"
+                alt="Imagem padrão"
+                class="parceiro-cover-moldura"
+            >
+            <p class="parceiro-cover-texto">Juntos, ampliamos o que o mundo tem de melhor!</p>
+        </div>
+    <?php endif; ?>
+</div>
 
 
-<div class="container mb-5" style="margin-top: -80px;">
+<div class="container mb-5" style="margin-top: -40px;">
     <div class="row justify-content-center">
         <div class="col-lg-10">
             
@@ -87,10 +98,10 @@ include __DIR__ . '/app/views/public/header_public.php';
                         <div class="me-md-4 mb-3 mb-md-0 position-relative">
                             <?php if (!empty($parceiro['logo_url'])): ?>
                                 <img src="<?= htmlspecialchars($parceiro['logo_url']) ?>" 
-     alt="<?= htmlspecialchars($parceiro['nome_fantasia']) ?>"
-     class="rounded-circle shadow bg-white p-2" 
-     style="width: 150px; height: 150px; object-fit: contain; object-position: center; margin-top: -60px; background: #fff;">
-                            <?php else: ?>
+                                    alt="<?= htmlspecialchars($parceiro['nome_fantasia']) ?>"
+                                    class="rounded-circle shadow bg-white p-2" 
+                                    style="width: 150px; height: 150px; object-fit: contain; object-position: center; background: #fff;">
+                                    <?php else: ?>
                                 <div class="rounded-circle bg-white shadow d-flex align-items-center justify-content-center border" 
                                      style="width: 150px; height: 150px; margin-top: -60px;">
                                     <i class="bi bi-building text-primary" style="font-size: 4rem;"></i>

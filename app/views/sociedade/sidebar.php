@@ -27,6 +27,10 @@ $menuAtivoSidebar = $menuAtivoSidebar ?? 'meus-dados';
            class="list-group-item list-group-item-action <?= $menuAtivoSidebar === 'meus-interesses' ? 'active' : '' ?>">
             <i class="bi bi-sliders me-2"></i></i>Editar Interesses e Perfil
         </a>
+        <a href="vitrine_de_impacto.php"
+           class="list-group-item list-group-item-action <?= $menuAtivoSidebar === 'vitrine-de-impacto' ? 'active' : '' ?>">
+            <i class="bi bi-grid me-2"></i></i>Vitrine de Impacto
+        </a>
 
         <a href="#"
            class="list-group-item list-group-item-action <?= $menuAtivoSidebar === 'meus-votos' ? 'active' : '' ?>">

@@ -213,7 +213,7 @@ include __DIR__ . '/app/views/public/header_public.php';
       </li>
 
       <!-- Logo 7 -->
-      <li class="apoio-institucional__item">
+      <!-- <li class="apoio-institucional__item">
         <img
           src="/assets/images/apoio/devagar_tag.png"
           alt="Parceiro institucional"
@@ -222,7 +222,7 @@ include __DIR__ . '/app/views/public/header_public.php';
           width="200"
           height="100"
         >
-      </li>
+      </li> -->
 
     </ul>
   </div>
@@ -379,7 +379,7 @@ include __DIR__ . '/app/views/public/header_public.php';
           Negócios reais que geram transformação social, ambiental e econômica em todo o Brasil.
         </p>
       </div>
-      <a href="/vitrine_nacional.php" class="btn-vitrine-ver-todos">
+      <a href="/vitrine_de_impacto.php" class="btn-vitrine-ver-todos">
         Ver todos os negócios <i class="bi bi-arrow-right ms-1"></i>
       </a>
     </div>

@@ -1,6 +1,10 @@
 <?php
 session_start();
 
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+$pageTitle = 'Perfil Público Parceiro';
 $config = require __DIR__ . '/../app/config/db.php';
 $pdo = new PDO(
     "mysql:host={$config['host']};dbname={$config['dbname']};port={$config['port']};charset={$config['charset']}",
@@ -30,11 +34,15 @@ if (!$stmt->fetch()) {
 $stmtMain = $pdo->prepare("
     SELECT 
         p.nome_fantasia,
-        pp.logo_url AS logo_perfil_url,
-        c.logo_url AS logo_contrato_url
+        pp.logo_url      AS logo_perfil_url,
+        c.logo_url       AS logo_contrato_url,
+        c.facebook_url   AS facebook_contrato,
+        c.instagram_url  AS instagram_contrato,
+        c.linkedin_url   AS linkedin_contrato,
+        c.youtube_url    AS youtube_contrato
     FROM parceiros p
     LEFT JOIN parceiros_perfil pp ON p.id = pp.parceiro_id
-    LEFT JOIN parceiro_contrato c ON p.id = c.parceiro_id
+    LEFT JOIN parceiro_contrato c  ON p.id = c.parceiro_id
     WHERE p.id = ?
 ");
 $stmtMain->execute([$parceiro_id]);
@@ -57,6 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $whatsapp_publico = trim($_POST['whatsapp_publico'] ?? '');
     $linkedin_url = trim($_POST['linkedin_url'] ?? '');
     $instagram_url = trim($_POST['instagram_url'] ?? '');
+    $facebook_url  = trim($_POST['facebook_url']  ?? '');
+    $youtube_url   = trim($_POST['youtube_url']   ?? '');
 
     $perfil_publicado = isset($_POST['perfil_publicado']) ? 1 : 0;
 
@@ -122,20 +132,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($erro)) {
         try {
             $sql = "UPDATE parceiros_perfil SET 
-                        logo_url = ?,
-                        imagem_capa_url = ?, 
-                        slogan = ?, 
-                        setor_atuacao = ?, 
+                        logo_url                = ?,
+                        imagem_capa_url         = ?, 
+                        slogan                  = ?, 
+                        setor_atuacao           = ?, 
                         descricao_institucional = ?, 
-                        ano_fundacao = ?, 
-                        porte_empresa = ?, 
-                        compromisso_impacto = ?, 
-                        tags_especialidades = ?, 
-                        email_publico = ?, 
-                        whatsapp_publico = ?, 
-                        linkedin_url = ?, 
-                        instagram_url = ?, 
-                        perfil_publicado = ?
+                        ano_fundacao            = ?, 
+                        porte_empresa           = ?, 
+                        compromisso_impacto     = ?, 
+                        tags_especialidades     = ?, 
+                        email_publico           = ?, 
+                        whatsapp_publico        = ?, 
+                        linkedin_url            = ?, 
+                        instagram_url           = ?,
+                        facebook_url            = ?,
+                        youtube_url             = ?,
+                        perfil_publicado        = ?
                     WHERE parceiro_id = ?";
 
             $stmtUpdate = $pdo->prepare($sql);
@@ -153,6 +165,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $whatsapp_publico,
                 $linkedin_url,
                 $instagram_url,
+                $facebook_url,
+                $youtube_url,
                 $perfil_publicado,
                 $parceiro_id
             ]);
@@ -308,29 +322,96 @@ include __DIR__ . '/../app/views/public/header_public.php';
                                 <i class="bi bi-info-circle"></i> Formatos aceitos: JPG, PNG ou WEBP (Max: 5MB). Preferência por imagem quadrada.
                             </div>
                         </div>
-
                         <!-- Upload de Capa -->
                         <div class="mb-4 bg-light p-3 rounded border">
                             <label class="form-label fw-bold text-dark mb-2">
                                 <i class="bi bi-image me-1"></i> Imagem de Capa do Perfil
                             </label>
 
+                            <!-- Preview da capa atual (só exibe se já houver imagem salva) -->
                             <?php if (!empty($perfil['imagem_capa_url'])): ?>
                                 <div class="mb-3">
+                                    <small class="text-muted d-block mb-2">
+                                        <i class="bi bi-check-circle-fill text-success me-1"></i> Capa atual — envie um novo arquivo para substituir.
+                                    </small>
                                     <div class="w-100 rounded" style="height: 120px; background-image: url('<?= htmlspecialchars($perfil['imagem_capa_url']) ?>'); background-size: cover; background-position: center;"></div>
-                                    <small class="text-muted d-block mt-1">Capa atual. Envie um novo arquivo para substituir.</small>
                                 </div>
                             <?php endif; ?>
 
-                            <input type="file" name="imagem_capa" class="form-control form-control-sm" accept=".jpg,.jpeg,.png,.webp">
+                            <input
+                                type="file"
+                                name="imagem_capa"
+                                id="inputImgCapa"
+                                class="form-control form-control-sm"
+                                accept=".jpg,.jpeg,.png,.webp"
+                                onchange="previewCapa(this)"
+                            >
                             <input type="hidden" name="imagem_capa_atual" value="<?= htmlspecialchars($perfil['imagem_capa_url'] ?? '') ?>">
 
+                            <!-- Preview da nova imagem selecionada -->
+                            <div id="capaPreviewWrap" class="mt-3 d-none">
+                                <small class="text-muted d-block mb-2">
+                                    <i class="bi bi-eye me-1"></i> Pré-visualização — como ficará no perfil:
+                                </small>
+
+                                <!-- Desktop -->
+                                <div class="mb-3">
+                                    <span class="badge bg-secondary mb-1">
+                                        <i class="bi bi-display me-1"></i> Desktop
+                                    </span>
+                                    <div style="width: 100%; height: 200px; overflow: hidden; border-radius: 4px; border: 1px solid #dee2e6;">
+                                        <img
+                                            id="capaPreviewDesktop"
+                                            src=""
+                                            alt="Preview desktop"
+                                            style="width: 100%; height: 100%; object-fit: cover; object-position: center center; display: block;"
+                                        >
+                                    </div>
+                                </div>
+
+                                <!-- Mobile -->
+                                <div>
+                                    <span class="badge bg-secondary mb-1">
+                                        <i class="bi bi-phone me-1"></i> Mobile (360px)
+                                    </span>
+                                    <!-- Simula a largura real do celular -->
+                                    <div style="max-width: 360px; height: 200px; overflow: hidden; border-radius: 4px; border: 1px solid #dee2e6;">
+                                        <img
+                                            id="capaPreviewMobile"
+                                            src=""
+                                            alt="Preview mobile"
+                                            style="width: 100%; height: 200px; object-fit: cover; object-position: center center; display: block;"
+                                        >
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="form-text mt-2">
-                                <i class="bi bi-info-circle"></i> Formatos aceitos: JPG, PNG ou WEBP (Max: 10MB). Recomendamos proporção horizontal, como 1920x400.
+                                <i class="bi bi-info-circle"></i> Formatos aceitos: JPG, PNG ou WEBP (Max: 10MB). Recomendamos proporção horizontal, como <strong>1200×200</strong>.
                             </div>
                         </div>
 
-                        <div class="row g-3">
+                        <script>
+                            function previewCapa(input) {
+                                const wrap    = document.getElementById('capaPreviewWrap');
+                                const desktop = document.getElementById('capaPreviewDesktop');
+                                const mobile  = document.getElementById('capaPreviewMobile');
+
+                                if (!input.files || !input.files[0]) {
+                                    wrap.classList.add('d-none');
+                                    return;
+                                }
+
+                                const reader = new FileReader();
+                                reader.onload = function (e) {
+                                    desktop.src = e.target.result;
+                                    mobile.src  = e.target.result;
+                                    wrap.classList.remove('d-none');
+                                };
+                                reader.readAsDataURL(input.files[0]);
+                            }   
+                        </script>
+                        <div class="row g-2">
                             <div class="col-md-12">
                                 <label class="form-label fw-semibold text-muted small">Slogan / Frase de Impacto</label>
                                 <input type="text" name="slogan" class="form-control" placeholder="Ex: Inovação para um futuro sustentável" value="<?= htmlspecialchars($perfil['slogan'] ?? '') ?>" maxlength="100">
@@ -379,9 +460,49 @@ include __DIR__ . '/../app/views/public/header_public.php';
                         </div>
 
                         <div>
-                            <label class="form-label fw-semibold text-muted small">Especialidades / Soluções Oferecidas</label>
-                            <input type="text" name="tags_especialidades" class="form-control" placeholder="Ex: Software B2B, Logística Reversa, Mentorias, Assessoria Jurídica" value="<?= htmlspecialchars($tags_atuais) ?>">
-                            <div class="form-text">Separe as especialidades por vírgula.</div>
+                            <label class="form-label fw-semibold text-muted small">
+                                Especialidades / Soluções Oferecidas
+                                </label>
+                                <input
+                                type="text"
+                                name="tags_especialidades"
+                                id="inputEspecialidades"
+                                class="form-control"
+                                placeholder="Ex: Software B2B, Logística Reversa, Mentorias, Assessoria Jurídica"
+                                value="<?= htmlspecialchars($tags_atuais) ?>"
+                                oninput="atualizarTagsPreview(this.value)"
+                                >
+                            <div class="form-text d-flex flex-column gap-1 mt-1">
+                                <span>
+                                    <i class="bi bi-tag me-1"></i>
+                                    <strong>Digite palavras-chave separadas por vírgula</strong> — não escreva parágrafos ou frases longas.
+                                </span>
+                                <span class="text-muted">
+                                    Exemplo correto: <code>Mentoria, ESG, Crédito Rural, Software B2B</code>
+                                </span>
+                                <span id="tagsPreview" class="mt-1"></span>
+                            </div>
+
+                            <script>
+                                function atualizarTagsPreview(valor) {
+                                const preview = document.getElementById('tagsPreview');
+                                const tags = valor.split(',').map(t => t.trim()).filter(t => t.length > 0);
+                                if (tags.length === 0) {
+                                    preview.innerHTML = '';
+                                    return;
+                                }
+                                const badges = tags.map(t =>
+                                    `<span class="badge rounded-pill me-1 mb-1" style="background:#f0f4e8;color:#5c6318;border:1px solid #c8d96a;font-size:.78rem;">${t}</span>`
+                                ).join('');
+                                preview.innerHTML = `<span class="text-muted small me-1">${tags.length} tag${tags.length > 1 ? 's' : ''}:</span>` + badges;
+                                }
+
+                                // Inicializa o preview se já houver valor salvo
+                                document.addEventListener('DOMContentLoaded', function () {
+                                const input = document.getElementById('inputEspecialidades');
+                                if (input && input.value.trim()) atualizarTagsPreview(input.value);
+                                });
+                            </script>
                         </div>
                     </div>
                 </div>
@@ -389,19 +510,32 @@ include __DIR__ . '/../app/views/public/header_public.php';
                 <!-- Contatos -->
                 <div class="card border-0 shadow-sm rounded-4 mb-4">
                     <div class="card-header bg-white border-bottom p-4">
-                        <h5 class="fw-bold mb-0"><i class="bi bi-link-45deg text-primary me-2"></i> Contato Público e Redes</h5>
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-link-45deg text-primary me-2"></i> Contato Público e Redes
+                        </h5>
                     </div>
                     <div class="card-body p-4">
                         <div class="alert alert-info border-0 small bg-info-subtle mb-4">
-                            <i class="bi bi-info-circle-fill me-2"></i> Os dados abaixo ficarão visíveis para o público. Use contatos comerciais que possam receber leads.
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            Os dados abaixo ficarão visíveis para o público. Use contatos comerciais que possam receber leads.
                         </div>
 
-                        <div class="row g-3">
+                        <?php
+                        // Fallback: usa o que está no perfil; se vazio, usa o que veio da etapa 6
+                        $val_linkedin  = $perfil['linkedin_url']  ?: ($dadosMain['linkedin_contrato']  ?? '');
+                        $val_instagram = $perfil['instagram_url'] ?: ($dadosMain['instagram_contrato'] ?? '');
+                        $val_facebook  = $perfil['facebook_url']  ?: ($dadosMain['facebook_contrato']  ?? '');
+                        $val_youtube   = $perfil['youtube_url']   ?: ($dadosMain['youtube_contrato']   ?? '');
+                        ?>
+
+                        <div class="row g-2">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-muted small">E-mail Comercial Público</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light"><i class="bi bi-envelope"></i></span>
-                                    <input type="email" name="email_publico" class="form-control" placeholder="contato@suaempresa.com.br" value="<?= htmlspecialchars($perfil['email_publico'] ?? '') ?>">
+                                    <input type="email" name="email_publico" class="form-control"
+                                        placeholder="contato@suaempresa.com.br"
+                                        value="<?= htmlspecialchars($perfil['email_publico'] ?? '') ?>">
                                 </div>
                             </div>
 
@@ -409,7 +543,9 @@ include __DIR__ . '/../app/views/public/header_public.php';
                                 <label class="form-label fw-semibold text-muted small">WhatsApp Comercial</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light"><i class="bi bi-whatsapp text-success"></i></span>
-                                    <input type="text" name="whatsapp_publico" class="form-control wpp_mask" placeholder="(00) 00000-0000" value="<?= htmlspecialchars($perfil['whatsapp_publico'] ?? '') ?>">
+                                    <input type="text" name="whatsapp_publico" class="form-control wpp_mask"
+                                        placeholder="(00) 00000-0000"
+                                        value="<?= htmlspecialchars($perfil['whatsapp_publico'] ?? '') ?>">
                                 </div>
                             </div>
 
@@ -417,7 +553,9 @@ include __DIR__ . '/../app/views/public/header_public.php';
                                 <label class="form-label fw-semibold text-muted small">Página do LinkedIn</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light"><i class="bi bi-linkedin text-primary"></i></span>
-                                    <input type="url" name="linkedin_url" class="form-control" placeholder="https://linkedin.com/company/suaempresa" value="<?= htmlspecialchars($perfil['linkedin_url'] ?? '') ?>">
+                                    <input type="url" name="linkedin_url" class="form-control"
+                                        placeholder="https://linkedin.com/company/suaempresa"
+                                        value="<?= htmlspecialchars($val_linkedin) ?>">
                                 </div>
                             </div>
 
@@ -425,7 +563,29 @@ include __DIR__ . '/../app/views/public/header_public.php';
                                 <label class="form-label fw-semibold text-muted small">Perfil do Instagram</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light"><i class="bi bi-instagram text-danger"></i></span>
-                                    <input type="url" name="instagram_url" class="form-control" placeholder="https://instagram.com/suaempresa" value="<?= htmlspecialchars($perfil['instagram_url'] ?? '') ?>">
+                                    <input type="url" name="instagram_url" class="form-control"
+                                        placeholder="https://instagram.com/suaempresa"
+                                        value="<?= htmlspecialchars($val_instagram) ?>">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted small">Página do Facebook</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-facebook text-primary"></i></span>
+                                    <input type="url" name="facebook_url" class="form-control"
+                                        placeholder="https://facebook.com/suaempresa"
+                                        value="<?= htmlspecialchars($val_facebook) ?>">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted small">Canal do YouTube</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-youtube text-danger"></i></span>
+                                    <input type="url" name="youtube_url" class="form-control"
+                                        placeholder="https://youtube.com/@suaempresa"
+                                        value="<?= htmlspecialchars($val_youtube) ?>">
                                 </div>
                             </div>
                         </div>

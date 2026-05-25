@@ -248,14 +248,6 @@ if ($faseVotoAtiva && !empty($negocios)) {
 
 <div class="container vitrine-nacional-page">
     <div class="vitrine-nacional-hero mb-4">
-
-        <!-- Bolinhas decorativas -->
-        <span class="vitrine-hero-dot vitrine-hero-dot--1" aria-hidden="true"></span>
-        <span class="vitrine-hero-dot vitrine-hero-dot--2" aria-hidden="true"></span>
-        <span class="vitrine-hero-dot vitrine-hero-dot--3" aria-hidden="true"></span>
-        <span class="vitrine-hero-dot vitrine-hero-dot--4" aria-hidden="true"></span>
-        <span class="vitrine-hero-dot vitrine-hero-dot--5" aria-hidden="true"></span>
-
         <div class="vitrine-nacional-hero-content">
 
             <h1 class="vitrine-title mb-2">

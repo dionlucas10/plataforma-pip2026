@@ -8,7 +8,7 @@
       <div class="col-12 col-md-4 text-center text-md-start">
         <img src="/../assets/images/impactos_positivos.svg" alt="Impactos Positivos" style="height:52px;">
         <p class="small mt-3" style="color:#6c8070; line-height:1.6;">
-          Plataforma Impactos Positivos — fortalecendo negócios de impacto e promovendo transformação social.
+          Impactos Positivos - A plataforma para negócios que transformam a economia
         </p>
       </div>
 
@@ -32,10 +32,11 @@
       <div class="col-12 col-md-4 text-center text-md-start">
         <h6 class="fw-bold mb-3" style="color:#1E3425; text-transform:uppercase; font-size:.75rem; letter-spacing:.08em;">Links Essenciais</h6>
         <ul class="list-unstyled small">
-          <li class="mb-1"><a href="https://impactospositivos.com/quem-somos/" target="_blank" class="footer-link">Sobre Nós</a></li>
-          <li class="mb-1"><a href="https://impactospositivos.com/manisfesto/" target="_blank" class="footer-link">Manifesto</a></li>
-          <li class="mb-1"><a href="https://impactospositivos.com/sobre-a-premiacao/" target="_blank" class="footer-link">Sobre a Premiação</a></li>
-          <li class="mb-1"><a href="https://impactospositivos.com/regulamento-do-premio/" target="_blank" class="footer-link">Regulamento do Prêmio</a></li>
+          <li class="mb-1"><a href="/cronograma.php" target="_blank" class="footer-link">Cronograma</a></li>
+          <li class="mb-1"><a href="/regulamento-do-premio.php" target="_blank" class="footer-link">Regulamento do Prêmio</a></li>
+          <li class="mb-1"><a href="/politica-de-privacidade.php" target="_blank" class="footer-link">Política de Privacidade</a></li>
+          <li class="mb-1"><a href="/politica-de-posicionamento.php" target="_blank" class="footer-link">Política de Posicionamento</a></li>
+          <li class="mb-1"><a href="/termos-de-uso.php" target="_blank" class="footer-link">Termos de Uso da Plataforma</a></li>
         </ul>
       </div>
 

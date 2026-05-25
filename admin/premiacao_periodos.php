@@ -34,6 +34,13 @@ try {
     // Ignora se já foi aplicado anteriormente
 }
 
+// ── Garante coluna url_evento em premiacao_fases ──────────────────────────────
+try {
+    $pdo->exec("ALTER TABLE premiacao_fases ADD COLUMN url_evento VARCHAR(500) NULL DEFAULT NULL AFTER criterio_desempate");
+} catch (PDOException $e) {
+    // Coluna já existe — ignora
+}
+
 $pageTitle = 'Premiação - Períodos';
 $mensagem  = '';
 $erro      = '';
@@ -95,19 +102,10 @@ function labelTipoFase(string $tipo): string
 // APURAÇÃO AUTOMÁTICA
 // ============================================================
 
-/**
- * Retorna a cláusula SQL "IN (...)" com os status elegíveis para entrar
- * no pool de uma determinada fase.
- *
- * Fase final        → apenas 'finalista'
- * Classificatória 1 → 'elegivel' OU 'classificada_fase_1' (permite re-apuração)
- * Classificatória N → 'classificada_fase_(N-1)' OU 'classificada_fase_N'
- *                     (o segundo cobre re-apurações da mesma rodada)
- */ 
 function buildStatusPool(string $tipoFase, int $rodada): string
 {
     if ($tipoFase === 'final') {
-        return "IN ('finalista')";
+        return "IN ('finalista','vencedora')";
     }
     if ($rodada <= 1) {
         return "IN ('elegivel','classificada_fase_1')";
@@ -117,16 +115,6 @@ function buildStatusPool(string $tipoFase, int $rodada): string
     return "IN ('{$statusAnterior}','{$statusAtual}')";
 }
 
-/**
- * Apuração e gravação dos classificados de uma fase.
- *
- * ORDEM DE CLASSIFICAÇÃO (classificatória):
- *   1º origem: ambos → tecnica → popular → complemento
- *   2º desempate: mais votos técnicos
- *   3º desempate: mais votos populares
- *   4º desempate: score_geral (scores_negocios) — maior vence
- *   5º desempate: inscricao_id ASC (data de inscrição, quem se inscreveu primeiro)
- */
 function apurarEGravar(PDO $pdo, array $fase): array
 {
     $faseId      = (int)$fase['id'];
@@ -134,37 +122,30 @@ function apurarEGravar(PDO $pdo, array $fase): array
     $tipoFase    = $fase['tipo_fase'] ?? 'classificatoria';
     $rodada      = (int)($fase['rodada'] ?? 0);
 
-    $statusNovo  = ($tipoFase === 'final') ? 'finalista' : 'classificada_fase_' . max(1, $rodada);
+    $statusNovo  = ($tipoFase === 'final') ? 'vencedora' : 'classificada_fase_' . max(1, $rodada);
     $statusPool  = buildStatusPool($tipoFase, $rodada);
 
-    // ── Coleta votos populares ──────────────────────────────────────────────────
     $vp = [];
     $st = $pdo->prepare("SELECT inscricao_id, COUNT(*) AS v FROM premiacao_votos_populares WHERE fase_id=? GROUP BY inscricao_id");
     $st->execute([$faseId]);
     foreach ($st->fetchAll() as $r) $vp[(int)$r['inscricao_id']] = (int)$r['v'];
 
-    // ── Coleta votos técnicos ────────────────────────────────────────────────────
     $vt = [];
     $st = $pdo->prepare("SELECT inscricao_id, COUNT(*) AS v FROM premiacao_votos_tecnicos WHERE fase_id=? GROUP BY inscricao_id");
     $st->execute([$faseId]);
     foreach ($st->fetchAll() as $r) $vt[(int)$r['inscricao_id']] = (int)$r['v'];
 
-    // ── Coleta votos de júri ─────────────────────────────────────────────────────
     $vj = [];
     $st = $pdo->prepare("SELECT inscricao_id, COUNT(*) AS v FROM premiacao_votos_juri WHERE fase_id=? GROUP BY inscricao_id");
     $st->execute([$faseId]);
     foreach ($st->fetchAll() as $r) $vj[(int)$r['inscricao_id']] = (int)$r['v'];
 
-    // ── Coleta score_geral de scores_negocios (chave: negocio_id) ────────────────
-    // Lemos todos de uma vez para evitar N+1 dentro do loop de categorias.
-    // A chave do array será negocio_id — precisaremos mapear inscricao → negocio_id.
     $scoreMap = [];
     $st = $pdo->query("SELECT negocio_id, score_geral FROM scores_negocios");
     foreach ($st->fetchAll() as $r) {
         $scoreMap[(int)$r['negocio_id']] = (float)$r['score_geral'];
     }
 
-    // ── Categorias da premiação ──────────────────────────────────────────────────
     $cats = $pdo->prepare("SELECT id, nome FROM premiacao_categorias WHERE premiacao_id=? ORDER BY ordem");
     $cats->execute([$premiacaoId]);
 
@@ -172,11 +153,9 @@ function apurarEGravar(PDO $pdo, array $fase): array
     $pdo->beginTransaction();
 
     try {
-        // Limpa classificados anteriores desta fase
         $pdo->prepare("DELETE FROM premiacao_classificados WHERE fase_id=?")->execute([$faseId]);
 
-        // Status que não devem ser rebaixados (fases futuras já concluídas)
-        $statusProtegidos = ['finalista', 'vencedora'];
+        $statusProtegidos = ['vencedora'];
         for ($i = max(1, $rodada) + 1; $i <= 10; $i++) {
             $statusProtegidos[] = 'classificada_fase_' . $i;
         }
@@ -185,14 +164,12 @@ function apurarEGravar(PDO $pdo, array $fase): array
             $catId   = (int)$cat['id'];
             $catNome = $cat['nome'];
 
-            // Busca inscrições elegíveis com negocio_id para lookup do score
             $stPool = $pdo->prepare("SELECT id, negocio_id FROM premiacao_inscricoes WHERE premiacao_id=? AND categoria=? AND status $statusPool");
             $stPool->execute([$premiacaoId, $catNome]);
             $poolRows = $stPool->fetchAll();
 
             if (empty($poolRows)) continue;
 
-            // Mapeia inscricao_id → negocio_id para lookup do score
             $inscToNeg = [];
             foreach ($poolRows as $row) {
                 $inscToNeg[(int)$row['id']] = (int)$row['negocio_id'];
@@ -203,8 +180,9 @@ function apurarEGravar(PDO $pdo, array $fase): array
             $topTec  = (int)($fase['qtd_classificados_tecnica'] ?? 10);
             $totalCl = $topPop + $topTec;
 
-            // ── Fase final ────────────────────────────────────────────────────
             if ($tipoFase === 'final') {
+                $qtdFinal = max(1, (int)($fase['qtd_classificados_final'] ?? 1));
+
                 $poolSet = array_flip($pool);
                 $vpPool  = array_filter($vp, fn($id) => isset($poolSet[$id]), ARRAY_FILTER_USE_KEY);
                 $vjPool  = array_filter($vj, fn($id) => isset($poolSet[$id]), ARRAY_FILTER_USE_KEY);
@@ -222,6 +200,7 @@ function apurarEGravar(PDO $pdo, array $fase): array
                         'pop'    => $pop,
                         'juri'   => $juri,
                         'score'  => $score,
+                        'insc'   => $id,
                     ];
                 }
                 uasort($resultado, fn($a, $b) =>
@@ -229,20 +208,18 @@ function apurarEGravar(PDO $pdo, array $fase): array
                     ?: $b['juri']  <=> $a['juri']
                     ?: $b['pop']   <=> $a['pop']
                     ?: $b['score'] <=> $a['score']
-                    ?: array_search(array_keys($resultado)[0], $pool) <=> 0
+                    ?: $a['insc']  <=> $b['insc']
                 );
+                $resultado = array_slice($resultado, 0, $qtdFinal, true);
 
-            // ── Fase classificatória ─────────────────────────────────────────
             } else {
                 $poolSet = array_flip($pool);
                 $vpF = array_filter($vp, fn($id) => isset($poolSet[$id]), ARRAY_FILTER_USE_KEY);
                 $vtF = array_filter($vt, fn($id) => isset($poolSet[$id]), ARRAY_FILTER_USE_KEY);
 
-                // Seleciona top por votos populares e top por votos técnicos
                 arsort($vpF); $selPop = array_slice(array_keys($vpF), 0, $topPop, true);
                 arsort($vtF); $selTec = array_slice(array_keys($vtF), 0, $topTec, true);
 
-                // Monta conjunto com origem
                 $sel = [];
                 foreach ($selPop as $id) {
                     $negId = $inscToNeg[$id] ?? 0;
@@ -265,15 +242,12 @@ function apurarEGravar(PDO $pdo, array $fase): array
                             'insc'   => $id,
                         ];
                     } else {
-                        // Está nos dois pools → origem ambos
                         $sel[$id]['origem'] = 'ambos';
                     }
                 }
 
-                // Complemento: preenche vagas restantes (ordenado por votos técnicos DESC)
                 if (count($sel) < $totalCl) {
                     $todos = $pool;
-                    // Ordena por votos técnicos DESC, desempate por votos populares DESC
                     usort($todos, fn($a, $b) =>
                         ($vtF[$b] ?? 0) <=> ($vtF[$a] ?? 0)
                         ?: ($vpF[$b] ?? 0) <=> ($vpF[$a] ?? 0)
@@ -293,12 +267,6 @@ function apurarEGravar(PDO $pdo, array $fase): array
                     }
                 }
 
-                // ── Ordenação final (posições no ranking) ─────────────────────
-                // 1º origem: ambos(0) → tecnica(1) → popular(2) → complemento(3)
-                // 2º desempate: votos técnicos DESC
-                // 3º desempate: votos populares DESC
-                // 4º desempate: score_geral DESC
-                // 5º desempate: inscricao_id ASC (quem se inscreveu primeiro)
                 $ord = ['ambos' => 0, 'tecnica' => 1, 'popular' => 2, 'complemento' => 3];
                 uasort($sel, fn($a, $b) =>
                     ($ord[$a['origem']] ?? 9) <=> ($ord[$b['origem']] ?? 9)
@@ -310,14 +278,12 @@ function apurarEGravar(PDO $pdo, array $fase): array
                 $resultado = $sel;
             }
 
-            // ── Grava classificados e atualiza status das inscrições ──────────
             $pos      = 1;
             $idsClass = [];
 
             foreach ($resultado as $inscId => $dados) {
                 $negId = $inscToNeg[$inscId] ?? 0;
 
-                // fallback caso inscricao_id não esteja no mapa (fase final pode chegar por caminho diferente)
                 if ($negId === 0) {
                     $stNeg = $pdo->prepare("SELECT negocio_id FROM premiacao_inscricoes WHERE id=?");
                     $stNeg->execute([$inscId]);
@@ -333,7 +299,6 @@ function apurarEGravar(PDO $pdo, array $fase): array
                 $totalGravados++;
                 $idsClass[] = $inscId;
 
-                // Avança status da inscrição (respeita status mais avançados)
                 $stSt = $pdo->prepare("SELECT status FROM premiacao_inscricoes WHERE id=?");
                 $stSt->execute([$inscId]);
                 $stAtual = $stSt->fetchColumn();
@@ -346,7 +311,6 @@ function apurarEGravar(PDO $pdo, array $fase): array
                 $pos++;
             }
 
-            // ── Marca como 'eliminada' quem estava no pool mas NÃO foi classificado ──
             if (!empty($idsClass)) {
                 $ph = implode(',', array_fill(0, count($idsClass), '?'));
                 $pdo->prepare("
@@ -397,6 +361,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $descricao               = trim($_POST['descricao'] ?? '');
             $dataInicio              = trim($_POST['data_inicio'] ?? '');
             $dataFim                 = trim($_POST['data_fim'] ?? '');
+            $urlEvento               = trim($_POST['url_evento'] ?? '');
             $permiteVotoPopular      = isset($_POST['permite_voto_popular']) ? 1 : 0;
             $permiteAvaliacaoTecnica = isset($_POST['permite_avaliacao_tecnica']) ? 1 : 0;
             $permiteJuriFinal        = isset($_POST['permite_juri_final']) ? 1 : 0;
@@ -411,6 +376,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($nome === '')         throw new Exception('Informe o nome da fase.');
             if ($slug === '')         throw new Exception('Informe o slug da fase.');
             if ($dataInicio === '' || $dataFim === '') throw new Exception('Informe as datas de início e fim.');
+
+            // url_evento é obrigatória quando tipo_fase = resultado
+            if ($tipoFase === 'resultado' && $urlEvento === '') {
+                throw new Exception('Informe a URL do evento de resultado (obrigatório para a fase de resultado).');
+            }
 
             $stmtEdicao = $pdo->prepare("SELECT id FROM premiacoes WHERE id=? LIMIT 1");
             $stmtEdicao->execute([$premiacaoId]);
@@ -439,16 +409,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('Informe as quantidades de classificados da fase classificatória.');
             if ($tipoFase === 'final' && ($permiteVotoPopular !== 1 || $permiteJuriFinal !== 1))
                 throw new Exception('A fase final deve habilitar voto popular e júri final.');
+            if ($tipoFase === 'final' && $qtdClassificadosFinal <= 0)
+                throw new Exception('Informe a quantidade de vencedores da fase final (normalmente 1).');
 
             $statusSalvar = calcularStatusAutomatico($inicioObj->format('Y-m-d H:i:s'), $fimObj->format('Y-m-d H:i:s'), $statusManual);
 
+            $urlEventoSalvar = $urlEvento !== '' ? $urlEvento : null;
+
             if ($faseId > 0) {
-                $pdo->prepare("UPDATE premiacao_fases SET premiacao_id=?,tipo_fase=?,rodada=?,ordem_exibicao=?,nome=?,slug=?,descricao=?,data_inicio=?,data_fim=?,permite_voto_popular=?,permite_avaliacao_tecnica=?,permite_juri_final=?,qtd_classificados_popular=?,qtd_classificados_tecnica=?,qtd_classificados_final=?,criterio_desempate=?,status=?,updated_at=NOW() WHERE id=?")
-                    ->execute([$premiacaoId,$tipoFase,$rodada>0?$rodada:null,$ordemExibicao,$nome,$slug,$descricao!==''?$descricao:null,$inicioObj->format('Y-m-d H:i:s'),$fimObj->format('Y-m-d H:i:s'),$permiteVotoPopular,$permiteAvaliacaoTecnica,$permiteJuriFinal,$qtdClassificadosPopular,$qtdClassificadosTecnica,$qtdClassificadosFinal,$criterioDesempate!==''?$criterioDesempate:null,$statusSalvar,$faseId]);
+                $pdo->prepare("UPDATE premiacao_fases SET premiacao_id=?,tipo_fase=?,rodada=?,ordem_exibicao=?,nome=?,slug=?,descricao=?,data_inicio=?,data_fim=?,permite_voto_popular=?,permite_avaliacao_tecnica=?,permite_juri_final=?,qtd_classificados_popular=?,qtd_classificados_tecnica=?,qtd_classificados_final=?,criterio_desempate=?,url_evento=?,status=?,updated_at=NOW() WHERE id=?")
+                    ->execute([$premiacaoId,$tipoFase,$rodada>0?$rodada:null,$ordemExibicao,$nome,$slug,$descricao!==''?$descricao:null,$inicioObj->format('Y-m-d H:i:s'),$fimObj->format('Y-m-d H:i:s'),$permiteVotoPopular,$permiteAvaliacaoTecnica,$permiteJuriFinal,$qtdClassificadosPopular,$qtdClassificadosTecnica,$qtdClassificadosFinal,$criterioDesempate!==''?$criterioDesempate:null,$urlEventoSalvar,$statusSalvar,$faseId]);
                 $mensagem = 'Fase atualizada com sucesso.';
             } else {
-                $pdo->prepare("INSERT INTO premiacao_fases (premiacao_id,tipo_fase,rodada,ordem_exibicao,nome,slug,descricao,data_inicio,data_fim,permite_voto_popular,permite_avaliacao_tecnica,permite_juri_final,qtd_classificados_popular,qtd_classificados_tecnica,qtd_classificados_final,criterio_desempate,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW())")
-                    ->execute([$premiacaoId,$tipoFase,$rodada>0?$rodada:null,$ordemExibicao,$nome,$slug,$descricao!==''?$descricao:null,$inicioObj->format('Y-m-d H:i:s'),$fimObj->format('Y-m-d H:i:s'),$permiteVotoPopular,$permiteAvaliacaoTecnica,$permiteJuriFinal,$qtdClassificadosPopular,$qtdClassificadosTecnica,$qtdClassificadosFinal,$criterioDesempate!==''?$criterioDesempate:null,$statusSalvar]);
+                $pdo->prepare("INSERT INTO premiacao_fases (premiacao_id,tipo_fase,rodada,ordem_exibicao,nome,slug,descricao,data_inicio,data_fim,permite_voto_popular,permite_avaliacao_tecnica,permite_juri_final,qtd_classificados_popular,qtd_classificados_tecnica,qtd_classificados_final,criterio_desempate,url_evento,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW())")
+                    ->execute([$premiacaoId,$tipoFase,$rodada>0?$rodada:null,$ordemExibicao,$nome,$slug,$descricao!==''?$descricao:null,$inicioObj->format('Y-m-d H:i:s'),$fimObj->format('Y-m-d H:i:s'),$permiteVotoPopular,$permiteAvaliacaoTecnica,$permiteJuriFinal,$qtdClassificadosPopular,$qtdClassificadosTecnica,$qtdClassificadosFinal,$criterioDesempate!==''?$criterioDesempate:null,$urlEventoSalvar,$statusSalvar]);
                 $mensagem = 'Fase cadastrada com sucesso.';
             }
 
@@ -534,6 +508,7 @@ $faseEdicao = [
     'descricao'                => '',
     'data_inicio'              => '',
     'data_fim'                 => '',
+    'url_evento'               => '',
     'permite_voto_popular'     => 0,
     'permite_avaliacao_tecnica'=> 0,
     'permite_juri_final'       => 0,
@@ -610,7 +585,7 @@ require_once $appBase . '/views/admin/header.php';
                 <strong><?= (int)$faseEdicao['id'] > 0 ? 'Editar fase' : 'Nova fase' ?></strong>
             </div>
             <div class="card-body">
-                <form method="post">
+                <form method="post" id="form-fase">
                     <input type="hidden" name="acao" value="salvar_fase">
                     <input type="hidden" name="fase_id" value="<?= (int)$faseEdicao['id'] ?>">
                     <input type="hidden" name="premiacao_id" value="<?= (int)$edicaoSelecionada ?>">
@@ -618,7 +593,8 @@ require_once $appBase . '/views/admin/header.php';
                     <div class="row g-2">
                         <div class="col-md-3">
                             <label class="form-label">Tipo de fase</label>
-                            <select name="tipo_fase" class="form-select" required>
+                            <select name="tipo_fase" id="tipo_fase" class="form-select" required
+                                    onchange="toggleUrlEvento(this.value)">
                                 <?php
                                 $tipos = [
                                     'inscricoes'         => 'Inscrições',
@@ -672,6 +648,18 @@ require_once $appBase . '/views/admin/header.php';
                             <input type="datetime-local" name="data_fim" class="form-control" required value="<?= h(formatDatetimeLocal($faseEdicao['data_fim'] ?? '')) ?>">
                         </div>
 
+                        <!-- URL do evento — exibida apenas quando tipo_fase = resultado -->
+                        <div class="col-md-12" id="campo-url-evento" style="display:none;">
+                            <label class="form-label">
+                                URL do evento (encontro presencial)
+                                <span class="badge bg-danger ms-1" style="font-size:10px;">Obrigatório</span>
+                            </label>
+                            <input type="url" name="url_evento" id="url_evento" class="form-control"
+                                   placeholder="https://..."
+                                   value="<?= h($faseEdicao['url_evento'] ?? '') ?>">
+                            <div class="form-text">O encontro acontece sempre na data de fim desta fase. Cole aqui o link de inscrição, transmissão ou página do evento.</div>
+                        </div>
+
                         <div class="col-12">
                             <label class="form-label">Descrição</label>
                             <textarea name="descricao" class="form-control" rows="3"><?= h($faseEdicao['descricao'] ?? '') ?></textarea>
@@ -709,13 +697,17 @@ require_once $appBase . '/views/admin/header.php';
                         </div>
 
                         <div class="col-md-4">
-                            <label class="form-label">Qtd. classificados final</label>
-                            <input type="number" name="qtd_classificados_final" class="form-control" min="0" value="<?= h((string)($faseEdicao['qtd_classificados_final'] ?? 0)) ?>">
+                            <label class="form-label">
+                                Qtd. vencedores (fase final)
+                                <small class="text-muted">— normalmente 1 por categoria</small>
+                            </label>
+                            <input type="number" name="qtd_classificados_final" class="form-control" min="1"
+                                   value="<?= h((string)($faseEdicao['qtd_classificados_final'] ?? 1)) ?>">
                         </div>
 
                         <div class="col-12">
                             <label class="form-label">Critério de desempate
-                                <small class="text-muted">(informativo — o desempate automático é: votos técnicos → votos populares → score_geral → inscrição mais antiga)</small>
+                                <small class="text-muted">(informativo — o desempate automático é: votos júri → votos populares → score_geral → inscrição mais antiga)</small>
                             </label>
                             <input type="text" name="criterio_desempate" class="form-control"
                                    placeholder="Ex.: score_geral, inscricao_mais_antiga"
@@ -770,6 +762,13 @@ require_once $appBase . '/views/admin/header.php';
                                         <?php if (!empty($fase['descricao'])): ?>
                                             <div class="small text-muted mt-1"><?= nl2br(h($fase['descricao'])) ?></div>
                                         <?php endif; ?>
+                                        <?php if ($fase['tipo_fase'] === 'resultado' && !empty($fase['url_evento'])): ?>
+                                            <div class="small mt-1">
+                                                <i class="bi bi-calendar-event me-1 text-primary"></i>
+                                                Encontro: <?= h(date('d/m/Y', strtotime($fase['data_fim']))) ?> —
+                                                <a href="<?= h($fase['url_evento']) ?>" target="_blank" rel="noopener noreferrer">ver evento</a>
+                                            </div>
+                                        <?php endif; ?>
                                     </td>
                                     <td>
                                         <strong>Início:</strong> <?= h(dataBr($fase['data_inicio'])) ?><br>
@@ -779,7 +778,9 @@ require_once $appBase . '/views/admin/header.php';
                                         <div><strong>Ordem:</strong> <?= (int)$fase['ordem_exibicao'] ?></div>
                                         <div><strong>Popular:</strong> <?= (int)$fase['qtd_classificados_popular'] ?></div>
                                         <div><strong>Técnica:</strong> <?= (int)$fase['qtd_classificados_tecnica'] ?></div>
-                                        <div><strong>Final:</strong> <?= (int)$fase['qtd_classificados_final'] ?></div>
+                                        <div><strong>
+                                            <?= $fase['tipo_fase'] === 'final' ? 'Vencedores:' : 'Final:' ?>
+                                        </strong> <?= (int)$fase['qtd_classificados_final'] ?></div>
                                         <div><strong>Desempate:</strong> <?= h((string)($fase['criterio_desempate'] ?: '—')) ?></div>
                                         <div class="small text-muted mt-1">
                                             <?= (int)$fase['permite_voto_popular'] === 1 ? 'Voto popular' : 'Sem voto popular' ?> /
@@ -828,5 +829,33 @@ require_once $appBase . '/views/admin/header.php';
         </div>
     <?php endif; ?>
 </div>
+
+<script>
+(function () {
+    function toggleUrlEvento(tipo) {
+        var campo = document.getElementById('campo-url-evento');
+        var input = document.getElementById('url_evento');
+        if (tipo === 'resultado') {
+            campo.style.display = 'block';
+            input.required = true;
+        } else {
+            campo.style.display = 'none';
+            input.required = false;
+        }
+    }
+
+    // Aplica ao carregar a página (modo edição pode já ter tipo=resultado)
+    var tipoSelect = document.getElementById('tipo_fase');
+    if (tipoSelect) {
+        toggleUrlEvento(tipoSelect.value);
+        tipoSelect.addEventListener('change', function () {
+            toggleUrlEvento(this.value);
+        });
+    }
+
+    // Expõe para o onchange inline também
+    window.toggleUrlEvento = toggleUrlEvento;
+})();
+</script>
 
 <?php require_once $appBase . '/views/admin/footer.php'; ?>

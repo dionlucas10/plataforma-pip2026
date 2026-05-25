@@ -148,7 +148,7 @@ include __DIR__ . '/../app/views/public/header_public.php';
                                     <span class="parceiro-radio-content">
                                         <span class="parceiro-radio-title"><?= htmlspecialchars($op['titulo']) ?></span>
                                         <span class="parceiro-radio-text"><?= htmlspecialchars($op['desc']) ?></span>
-                                        <span class="parceiro-radio-dica">➡️ <?= htmlspecialchars($op['dica']) ?></span>
+                                        <span class="parceiro-radio-dica"><?= htmlspecialchars($op['dica']) ?></span>
                                     </span>
                                 </label>
                                 <?php endforeach; ?>
@@ -240,7 +240,7 @@ include __DIR__ . '/../app/views/public/header_public.php';
                                         <div class="form-check m-0">
                                             <input class="form-check-input" type="checkbox" id="check_outro" <?= !empty($escopo_outro) ? 'checked' : '' ?>>
                                             <label class="form-check-label fw-semibold" for="check_outro">
-                                                Outro (campo aberto para detalhamento)
+                                                Outro
                                             </label>
                                         </div>
 

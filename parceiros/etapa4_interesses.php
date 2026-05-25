@@ -310,7 +310,7 @@ include __DIR__ . '/../app/views/public/header_public.php';
                             foreach ($setores_grupos as $grupo_nome => $grupo):
                                 $grupo_slug = md5($grupo_nome);
                             ?>
-                            <div class="parceiro-step-toggle-box mb-4">
+                            <div class="mb-4">
                                 <div class="d-flex align-items-start gap-3 mb-1">
                                     <div>
                                         <p class="fw-semibold mb-0"><?= htmlspecialchars($grupo_nome) ?></p>
@@ -478,7 +478,7 @@ include __DIR__ . '/../app/views/public/header_public.php';
                                         <div class="parceiro-step-toggle-box">
                                             <div class="form-check m-0">
                                                 <input class="form-check-input" type="checkbox" id="check_pini_outro" <?= !empty($perfil_iniciativa_outro) ? 'checked' : '' ?>>
-                                                <label class="form-check-label fw-semibold" for="check_pini_outro">Outro (campo aberto)</label>
+                                                <label class="form-check-label fw-semibold" for="check_pini_outro">Outro</label>
                                             </div>
                                             <div class="mt-2" id="div_pini_outro" style="<?= empty($perfil_iniciativa_outro) ? 'display:none;' : '' ?>">
                                                 <input

@@ -433,8 +433,8 @@ include __DIR__ . '/../app/views/public/header_public.php';
           <label for="termosUso">
             <span class="fw-600 d-block">Termos de Uso *</span>
             <small>Concordo com os
-              <a href="https://impactospositivos.com/termos-de-uso/" target="_blank">Termos de Uso</a> e a
-              <a href="https://impactospositivos.com/politica-de-privacidade/" target="_blank">Política de Privacidade</a>.
+              <a href="/../termos-de-uso.php" target="_blank">Termos de Uso</a>, 
+              <a href="/../politica-de-privacidade.php" target="_blank">Política de Privacidade</a> e a <a href="/../politica-de-posicionamento.php" target="_blank">Política de Posicionamento</a>.
             </small>
           </label>
         </div>

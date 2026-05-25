@@ -1,5 +1,6 @@
 <?php
 session_start();
+$pageTitle = 'Etapa 5 Uso da Plataforma Parceiro';
 $config = require __DIR__ . '/../app/config/db.php';
 $pdo = new PDO(
     "mysql:host={$config['host']};dbname={$config['dbname']};port={$config['port']};charset={$config['charset']}",
@@ -119,7 +120,7 @@ include __DIR__ . '/../app/views/public/header_public.php';
                                     ["icone" => "bi-lightbulb", "texto" => "Oportunidades de Mentoria"],
                                     ["icone" => "bi-mortarboard", "texto" => "Incentivos / Bolsas"],
                                     ["icone" => "bi-box", "texto" => "Produtos e Serviços"],
-                                    ["icone" => "bi-graph-up-arrow", "texto" => "Investimentos"],
+                                    ["icone" => "bi-graph-up-arrow", "texto" => "Oportunidades de Investimentos"],
                                     ["icone" => "bi-heart", "texto" => "Doações estruturadas"]
                                 ];
 
@@ -159,14 +160,17 @@ include __DIR__ . '/../app/views/public/header_public.php';
                                     <div>
                                         <h3 class="parceiro-step-section-title mb-1">Participação na Rede de Impacto</h3>
                                         <p class="parceiro-step-section-text mb-0">
-                                            A Rede de Impacto é um ambiente de matchmaking inteligente, onde sua organização pode conversar com negócios aprovados, criar pontes estratégicas e receber propostas de conexão.
+                                            A Rede de Impacto é um espaço de conexão, colaboração e visibilidade entre pessoas, organizações, negócios, investidores, especialistas e iniciativas que acreditam na construção de uma nova economia baseada em impacto positivo. 
+                                        </p>
+                                        <p class="parceiro-step-section-text mb-0">
+                                            Os participantes da rede podem acessar oportunidades de conexão estratégica, conteúdos, eventos, iniciativas colaborativas, programas especiais, divulgação de projetos e fortalecimento do ecossistema de impacto. 
                                         </p>
                                     </div>
                                 </div>
 
                                 <div class="mt-4">
                                     <label class="parceiro-step-label mb-3 d-block">
-                                        Deseja ativar seu perfil na Rede de Impacto agora?
+                                        Deseja participar da Rede de Impacto?
                                     </label>
 
                                     <div class="row g-3">
@@ -182,7 +186,7 @@ include __DIR__ . '/../app/views/public/header_public.php';
                                                     required
                                                 >
                                                 <span class="parceiro-radio-content">
-                                                    <span class="parceiro-radio-title">Sim, quero participar</span>
+                                                    <span class="parceiro-radio-title">Sim, tenho interesse em fazer parte da rede</span>
                                                 </span>
                                             </label>
                                         </div>
@@ -198,7 +202,7 @@ include __DIR__ . '/../app/views/public/header_public.php';
                                                     <?= ($rede_impacto === 'nao') ? 'checked' : '' ?>
                                                 >
                                                 <span class="parceiro-radio-content">
-                                                    <span class="parceiro-radio-title">Não</span>
+                                                    <span class="parceiro-radio-title">Não neste momento</span>
                                                 </span>
                                             </label>
                                         </div>
@@ -214,7 +218,7 @@ include __DIR__ . '/../app/views/public/header_public.php';
                                                     <?= ($rede_impacto === 'avaliar_depois') ? 'checked' : '' ?>
                                                 >
                                                 <span class="parceiro-radio-content">
-                                                    <span class="parceiro-radio-title">Avaliar depois</span>
+                                                    <span class="parceiro-radio-title">Quero avaliar melhor antes de participar</span>
                                                 </span>
                                             </label>
                                         </div>

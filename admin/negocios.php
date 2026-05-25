@@ -361,32 +361,33 @@ include __DIR__ . '/../app/views/admin/header.php';
               </td>
 
               <!-- Ações -->
-              <td class="text-center">
-                <div class="d-flex gap-1 justify-content-center flex-wrap">
+<!-- Ações -->
+<td class="neg-acoes">
+  <div class="neg-acoes-col">
 
-                  <a href="/admin/visualizar_negocio.php?id=<?= $nid ?>" class="act-btn edit" title="Ver detalhes do negócio"
-                     style="display:inline-flex;align-items:center;gap:.3rem;padding:.35rem .7rem;font-size:.78rem;white-space:nowrap;">
-                    <i class="bi bi-eye"></i>
-                    <span>Ver Detalhes</span>
-                  </a>
+    <a href="/admin/visualizar_negocio.php?id=<?= $nid ?>"
+       class="neg-acao-btn btn-ver"
+       title="Ver detalhes do negócio">
+      <i class="bi bi-eye"></i> Ver Detalhes
+    </a>
 
-                  <?php if (can_see_admin_shortcuts()): ?>
-                    <a href="/admin/recalcular_score.php?id=<?= $nid ?>" class="act-btn" title="Recalcular score deste negócio"
-                       style="display:inline-flex;align-items:center;gap:.3rem;padding:.35rem .7rem;font-size:.78rem;white-space:nowrap;background:rgba(151,163,39,.12);color:#5c6318;">
-                      <i class="bi bi-arrow-repeat"></i>
-                      <span>Recalcular Score</span>
-                    </a>
+    <?php if (can_see_admin_shortcuts()): ?>
+      <a href="/admin/recalcular_score.php?id=<?= $nid ?>"
+         class="neg-acao-btn btn-recalc"
+         title="Recalcular score deste negócio">
+        <i class="bi bi-arrow-repeat"></i> Recalcular Score
+      </a>
 
-                    <button type="button" class="act-btn" title="Enviar notificação por e-mail ao empreendedor"
-                            style="display:inline-flex;align-items:center;gap:.3rem;padding:.35rem .7rem;font-size:.78rem;white-space:nowrap;background:rgba(149,188,204,.18);color:#3a6f82;"
-                            onclick="abrirModalNotificacao(<?= $nid ?>, '<?= htmlspecialchars(addslashes((string)$n['nome_fantasia'])) ?>')">
-                      <i class="bi bi-bell"></i>
-                      <span>Notificar</span>
-                    </button>
-                  <?php endif; ?>
+      <button type="button"
+              class="neg-acao-btn btn-notif"
+              title="Enviar notificação por e-mail ao empreendedor"
+              onclick="abrirModalNotificacao(<?= $nid ?>, '<?= htmlspecialchars(addslashes((string)$n['nome_fantasia'])) ?>')">
+        <i class="bi bi-bell"></i> Notificar
+      </button>
+    <?php endif; ?>
 
-                </div>
-              </td>
+  </div>
+</td>
             </tr>
           <?php endforeach; ?>
         <?php endif; ?>

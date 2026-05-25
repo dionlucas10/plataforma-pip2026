@@ -1,5 +1,6 @@
 <?php
 session_start();
+$pageTitle = 'Etapa 1 Dados Parceiro';
 $config = require __DIR__ . '/../app/config/db.php';
 $pdo = new PDO(
     "mysql:host={$config['host']};dbname={$config['dbname']};port={$config['port']};charset={$config['charset']}",

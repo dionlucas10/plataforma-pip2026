@@ -106,7 +106,7 @@ include __DIR__ . '/../app/views/public/header_public.php';
                             <div class="parceiro-step-section-head">
                                 <h3 class="parceiro-step-section-title">Tipo de Parceria</h3>
                                 <p class="parceiro-step-section-text">
-                                    Você pode escolher mais de uma opção para representar a forma de atuação da sua organização.
+                                    Selecione uma ou mais opções que melhor representam como você deseja contribuir com o ecossistema Impactos Positivos.
                                 </p>
                             </div>
 

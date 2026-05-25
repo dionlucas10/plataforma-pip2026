@@ -1,6 +1,6 @@
 <?php
 session_start();
-
+$pageTitle = 'Revisão Cadastro Parceiro';
 $config = require __DIR__ . '/../app/config/db.php';
 $pdo = new PDO(
     "mysql:host={$config['host']};dbname={$config['dbname']};port={$config['port']};charset={$config['charset']}",
@@ -76,7 +76,7 @@ include __DIR__ . '/../app/views/public/header_public.php';
                     <ul class="parceiro-step-aside-list">
                         <li>Revise os dados institucionais e os termos principais da parceria com atenção.</li>
                         <li>Esta etapa está focada na geração da Carta-Acordo com base nas informações essenciais já preenchidas.</li>
-                        <li>A etapa 4 poderá ser complementada ou ajustada posteriormente, sem impedir a continuidade deste fluxo.</li>
+                        <li>A etapa 4 e Extra poderá ser complementada ou ajustada posteriormente, sem impedir a continuidade deste fluxo.</li>
                     </ul>
                 </div>
 

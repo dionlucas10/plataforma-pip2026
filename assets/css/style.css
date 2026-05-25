@@ -835,7 +835,7 @@ body {
 /* Logo em si */
 .apoio-institucional__logo {
   display: block;
-  max-height: 100px;
+  max-height: 120px;
   max-width: 200px;
   width: auto;
   height: auto;
@@ -1823,6 +1823,114 @@ GRID DE PARCEIROS
 }
 .canais-parceiros{
   font-size: small;
+}
+/* ════════════════════════════════
+   PERFIL PARCEIRO
+════════════════════════════════ */
+.capa-perfil {
+    width: 100%;
+    height: 250px;
+    background-size: cover;
+    background-position: center top; /* ancora no topo — preserva logo/texto que fica no centro-alto */
+    background-repeat: no-repeat;
+    background-color: #111;
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+    .capa-perfil {
+        height: 200px;           /* altura fixa pequena */
+        background-size: cover;  /* mantém cover — nenhum fundo preto aparece */
+        background-position: center center;
+        aspect-ratio: unset;     /* remove o aspect-ratio anterior */
+    }
+}
+
+/* ── Sem capa ── */
+.capa-vazia {
+    height: 80px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+@media (max-width: 768px) {
+    .capa-vazia { height: 60px; }
+}
+
+/* ═══════════════════════════════════════
+   CAPA DO PARCEIRO
+═══════════════════════════════════════ */
+
+.parceiro-cover {
+    position: relative;
+    width: 100%;
+    height: 250px;
+    overflow: hidden;
+}
+
+/* Imagem enviada pelo parceiro */
+.parceiro-cover-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center center;
+    display: block;
+}
+
+/* ── Sem imagem: fallback com moldura ── */
+.parceiro-cover--padrao {
+    background-color: #f5f5f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0 0 8px 8px;
+}
+
+.parceiro-cover-fallback {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.parceiro-cover-moldura {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    opacity: 0.2;
+}
+
+.parceiro-cover-texto {
+    position: relative;
+    z-index: 1;
+    color: #97A327;
+    font-size: 2.5rem;
+    font-weight: 600;
+    text-align: left;
+    line-height: 1.4;
+    max-width: 520px;
+    padding: 1rem 1.5rem;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+    .parceiro-cover {
+        height: 200px;
+    }
+
+    .parceiro-cover--padrao {
+        height: 200px;
+    }
+
+    .parceiro-cover-texto {
+        font-size: 1.2rem;
+        max-width: 280px;
+        padding: 0.75rem 1rem;
+    }
 }
 /* ════════════════════════════════
    ETAPA 5 — Imagem de Destaque
@@ -3107,8 +3215,7 @@ GRID DE PARCEIROS
     white-space: nowrap;
 }
 /* ════════════════════════════════════════════════
-   HERO — Vitrine Nacional
-   Adicione ao seu style.css
+   HERO — Vitrine Nacional (versão com imagem)
 ════════════════════════════════════════════════ */
 
 .vitrine-nacional-hero {
@@ -3121,43 +3228,33 @@ GRID DE PARCEIROS
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background-color: #f5f5f0; /* fallback claro */
+  background-color: #f5f5f0;
+  background-image: url('/assets/images/moldura.png');
+  background-repeat: no-repeat;
+  background-position:center;
+  background-size: cover;
   padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 3rem);
 }
 
-/* Elementos decorativos — círculos/bolhas no fundo (puro CSS, sem imagem) */
-.vitrine-nacional-hero::before,
-.vitrine-nacional-hero::after {
+/* Overlay de transparência sobre o hero */
+.vitrine-nacional-hero::before {
+  display: block !important; /* cancela o display:none anterior */
   content: '';
   position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
+  inset: 0;
+  background: rgba(245, 245, 240, 0.75); /* ajuste o último valor: 0 = transparente, 1 = opaco */
   z-index: 0;
+  border-radius: 0;
+  width: auto;
+  height: auto;
+  transform: none;
+  pointer-events: none;
 }
 
-/* Bolha grande — canto esquerdo */
-.vitrine-nacional-hero::before {
-  width: clamp(260px, 35vw, 480px);
-  height: clamp(260px, 35vw, 480px);
-  left: -8%;
-  top: 50%;
-  transform: translateY(-50%);
-  background: radial-gradient(circle, #9ab83a 0%, #6d8f1a 60%, transparent 100%);
-  opacity: 0.18;
+/* Oculta os spans de bolinha caso ainda existam no HTML */
+.vitrine-hero-dot {
+  display: none !important;
 }
-
-/* Bolha menor — canto direito */
-.vitrine-nacional-hero::after {
-  width: clamp(160px, 22vw, 320px);
-  height: clamp(160px, 22vw, 320px);
-  right: -4%;
-  top: 50%;
-  transform: translateY(-50%);
-  background: radial-gradient(circle, #b5d435 0%, #8aab1a 60%, transparent 100%);
-  opacity: 0.22;
-}
-
-/* Bolhas extras via pseudo-element em spans internos (opcional via JS) */
 
 /* Wrapper do conteúdo */
 .vitrine-nacional-hero-content {
@@ -3168,7 +3265,7 @@ GRID DE PARCEIROS
   width: 100%;
 }
 
-/* Título principal — tipografia grande, itálico+bold nas palavras destaque */
+/* Título */
 .vitrine-nacional-hero-content .vitrine-title {
   font-size: clamp(2.8rem, 8vw, 6.5rem);
   font-weight: 800;
@@ -3177,14 +3274,10 @@ GRID DE PARCEIROS
   letter-spacing: -0.02em;
   margin-bottom: 0.5rem;
 }
-
-/* Palavras em itálico dentro do título (ex: "vitrine", "negócios", "impactos") */
 .vitrine-nacional-hero-content .vitrine-title em {
   font-style: italic;
   font-weight: 800;
 }
-
-/* Palavras menores / artigos (ex: "de") */
 .vitrine-nacional-hero-content .vitrine-title small {
   font-size: 0.55em;
   font-weight: 400;
@@ -3192,12 +3285,7 @@ GRID DE PARCEIROS
   vertical-align: middle;
 }
 
-/* Kicker (opcional) */
-.vitrine-nacional-hero-content .vitrine-kicker {
-  display: none; /* oculto no design da imagem */
-}
-
-/* Subtítulo / descrição */
+/* Subtítulo */
 .vitrine-nacional-hero-content .vitrine-subtitle {
   font-size: clamp(0.9rem, 1.8vw, 1.05rem);
   color: #3a3a3a;
@@ -3222,7 +3310,6 @@ GRID DE PARCEIROS
   border-radius: 25px;
   transition: background 0.2s ease, border-color 0.2s ease;
 }
-
 .vitrine-nacional-hero-content .btn-vitrine-cta:hover,
 .vitrine-nacional-hero-content .btn-vitrine-cta:focus-visible {
   background: #CDDE00;
@@ -3230,130 +3317,28 @@ GRID DE PARCEIROS
   color: #1E3425;
 }
 
-/* Decoração: bolinhas espalhadas (CSS shapes) */
-.vitrine-hero-dot {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.55;
-}
-
-.vitrine-hero-dot--1 {
-  width: 18px; height: 18px;
-  background: #d4e84a;
-  top: 18%; left: 12%;
-}
-
-.vitrine-hero-dot--2 {
-  width: 12px; height: 12px;
-  border: 3px solid #4a7c1f;
-  background: transparent;
-  top: 72%; left: 8%;
-}
-
-.vitrine-hero-dot--3 {
-  width: 22px; height: 22px;
-  background: #d4e84a;
-  top: 25%; right: 14%;
-}
-
-.vitrine-hero-dot--4 {
-  width: 14px; height: 14px;
-  border: 3px solid #9ab83a;
-  background: transparent;
-  bottom: 20%; right: 10%;
-}
-
-.vitrine-hero-dot--5 {
-  width: 10px; height: 10px;
-  background: #4a7c1f;
-  top: 55%; left: 22%;
-  opacity: 0.35;
-}
-
 /* ── Responsivo ──────────────────────────────── */
 @media (max-width: 768px) {
   .vitrine-nacional-hero {
     min-height: 320px;
+    background-size: auto 65%;
+    background-position: right bottom;
   }
-
   .vitrine-nacional-hero-content .vitrine-title {
     font-size: clamp(2.2rem, 11vw, 3.5rem);
   }
 }
 
 @media (max-width: 480px) {
-  .vitrine-hero-dot { display: none; }
-
+  .vitrine-nacional-hero {
+    background-image: none;
+  }
   .vitrine-nacional-hero-content .vitrine-subtitle {
     font-size: 0.9rem;
   }
 }
-.vitrine-home {
-  background: #f8faf6;
-  
-  /* Quebra o container do <main> e vai até as bordas da viewport */
-  margin-left:  calc(-50vw + 50%);
-  margin-right: calc(-50vw + 50%);
-  padding-left: calc(50vw - 50%);
-  padding-right: calc(50vw - 50%);
-}
 
-/* VITRINE NACIONAL */
-/* .vitrine-nacional-page {
-    padding-bottom: 2rem;    
-}
-
-.vitrine-nacional-hero {
-    position: relative;
-    display: flex;
-    align-items: center;
-    min-height: 280px;
-    padding: 2.5rem 2rem;
-    border-radius: 1.5rem;
-    overflow: hidden;
-    background-image: url('/assets/images/moldura.png');
-    background-repeat: no-repeat;
-    background-size: cover;
-    background-position: center center;
-    isolation: isolate;
-}
-
-.vitrine-nacional-hero::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: rgba(255, 255, 255, 0.78);
-    z-index: 0;
-}
-
-.vitrine-nacional-hero-content {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    max-width: 680px;
-}
-
-.vitrine-nacional-hero .vitrine-kicker,
-.vitrine-nacional-hero .vitrine-title,
-.vitrine-nacional-hero .vitrine-subtitle {
-    position: relative;
-    z-index: 1;
-} */
-
-@media (max-width: 767.98px) {
-    .vitrine-nacional-hero {
-        min-height: 220px;
-        padding: 1.5rem 1.25rem;
-        border-radius: 1rem;
-        background-position: center;
-    }
-
-    .vitrine-nacional-hero-content {
-        max-width: 100%;
-    }
-}
+/* VTRINE CORPO PÁGINA */
 .vitrine-kicker {
     display: inline-block;
     margin-bottom: 0.6rem;
@@ -3361,7 +3346,7 @@ GRID DE PARCEIROS
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: #97A327;
+    color: #1E3425;
 }
 
 .vitrine-title {

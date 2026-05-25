@@ -65,7 +65,7 @@ function get_base_url()
     }
 
     $protocolo = $isSecure ? 'https' : 'http';
-    $dominio = $_SERVER['HTTP_HOST'] ?? 'vitrine.impactospositivos.com';
+    $dominio = $_SERVER['HTTP_HOST'] ?? 'impactospositivos.com';
 
     return $protocolo . '://' . $dominio;
 }
