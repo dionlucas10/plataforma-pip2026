@@ -8,14 +8,15 @@ USE pipnewdb;
 
 -- ----------------------------------------------------------
 -- 1. ADICIONAR COLUNAS NA TABELA empreendedores
---    (apenas se ainda não existirem)
+--    ⚠️  MySQL não suporta IF NOT EXISTS em ADD COLUMN.
+--    Execute apenas se as colunas ainda não existirem.
 -- ----------------------------------------------------------
 
 ALTER TABLE empreendedores
-  ADD COLUMN IF NOT EXISTS orientacao_sexual  VARCHAR(100)
+  ADD COLUMN orientacao_sexual  VARCHAR(100)
       CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
       AFTER etnia,
-  ADD COLUMN IF NOT EXISTS grupo_vulneravel   VARCHAR(100)
+  ADD COLUMN grupo_vulneravel   VARCHAR(100)
       CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
       AFTER orientacao_sexual;
 
@@ -25,10 +26,10 @@ ALTER TABLE empreendedores
 -- ----------------------------------------------------------
 
 ALTER TABLE negociofundadores
-  ADD COLUMN IF NOT EXISTS orientacao_sexual  VARCHAR(100)
+  ADD COLUMN orientacao_sexual  VARCHAR(100)
       CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
       AFTER etnia,
-  ADD COLUMN IF NOT EXISTS grupo_vulneravel   VARCHAR(100)
+  ADD COLUMN grupo_vulneravel   VARCHAR(100)
       CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
       AFTER orientacao_sexual;
 
