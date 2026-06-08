@@ -216,7 +216,8 @@ include __DIR__ . '/../app/views/empreendedor/header.php';
 
                                 <!-- ── Orientação Sexual ── -->
                                 <div class="col-12">
-                                  <label class="form-label fw-bold">Qual sua orientação sexual? *</label>
+                                  <label class="form-label fw-bold">Qual sua orientação sexual?</label>
+                                  <p class="text-muted small mb-2">Essa informação é opcional e confidencial. Ajuda a garantir diversidade e inclusão no programa.</p>
                                   <?php
                                   $oriOpts  = ['Heterossexual','Homossexual','Bissexual','Assexual','Prefiro não responder'];
                                   $oriValDB = $fp['orientacao_sexual'] ?? '';
@@ -228,7 +229,7 @@ include __DIR__ . '/../app/views/empreendedor/header.php';
                                         <input class="form-check-input" type="radio"
                                                name="fundador_principal[orientacao_sexual]"
                                                value="<?= $ori ?>"
-                                               <?= $oriValDB === $ori ? 'checked' : '' ?> required>
+                                               <?= $oriValDB === $ori ? 'checked' : '' ?>>
                                         <label class="form-check-label"><?= $ori ?></label>
                                       </div>
                                     <?php endforeach; ?>
@@ -251,14 +252,15 @@ include __DIR__ . '/../app/views/empreendedor/header.php';
 
                                 <!-- ── Grupo Vulnerável ── -->
                                 <div class="col-12">
-                                  <label class="form-label fw-bold">Você pertence a algum desses grupos? *</label>
+                                  <label class="form-label fw-bold">Você pertence a algum desses grupos?</label>
+                                  <p class="text-muted small mb-2">Essa informação é opcional e confidencial.</p>
                                   <div class="d-flex flex-wrap gap-3 mt-1">
                                     <?php foreach (['Pessoa com deficiência','Pessoa refugiada','Não'] as $grp): ?>
                                       <div class="form-check">
                                         <input class="form-check-input" type="radio"
                                                name="fundador_principal[grupo_vulneravel]"
                                                value="<?= $grp ?>"
-                                               <?= ($fp['grupo_vulneravel'] ?? '') === $grp ? 'checked' : '' ?> required>
+                                               <?= ($fp['grupo_vulneravel'] ?? '') === $grp ? 'checked' : '' ?>>
                                         <label class="form-check-label"><?= $grp ?></label>
                                       </div>
                                     <?php endforeach; ?>
@@ -505,10 +507,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     <input type="text" class="form-control" name="cofundador[${count}][celular]" required>
                 </div>
                 <div class="col-12">
-                  <label class="form-label fw-bold">Qual sua orientação sexual? *</label>
+                  <label class="form-label fw-bold">Qual sua orientação sexual?</label>
+                  <p class="text-muted small mb-2">Essa informação é opcional e confidencial. Ajuda a garantir diversidade e inclusão no programa.</p>
                   <div class="d-flex flex-wrap gap-3">
                     ${['Heterossexual','Homossexual','Bissexual','Assexual','Prefiro não responder'].map(o =>
-                      `<div class="form-check"><input class="form-check-input" type="radio" name="cofundador[${count}][orientacao_sexual]" value="${o}" required><label class="form-check-label">${o}</label></div>`
+                      `<div class="form-check"><input class="form-check-input" type="radio" name="cofundador[${count}][orientacao_sexual]" value="${o}"><label class="form-check-label">${o}</label></div>`
                     ).join('')}
                     <div class="form-check"><input class="form-check-input" type="radio" name="cofundador[${count}][orientacao_sexual]" value="Outra" id="cf_ori_outra_${count}" onchange="document.getElementById('cf_ori_texto_${count}').classList.remove('d-none')"><label class="form-check-label" for="cf_ori_outra_${count}">Outra. Qual?</label></div>
                   </div>
@@ -517,10 +520,11 @@ document.addEventListener('DOMContentLoaded', function () {
                   </div>
                 </div>
                 <div class="col-12">
-                  <label class="form-label fw-bold">Você pertence a algum desses grupos? *</label>
+                  <label class="form-label fw-bold">Você pertence a algum desses grupos?</label>
+                  <p class="text-muted small mb-2">Essa informação é opcional e confidencial.</p>
                   <div class="d-flex flex-wrap gap-3">
                     ${['Pessoa com deficiência','Pessoa refugiada','Não'].map(g =>
-                      `<div class="form-check"><input class="form-check-input" type="radio" name="cofundador[${count}][grupo_vulneravel]" value="${g}" required><label class="form-check-label">${g}</label></div>`
+                      `<div class="form-check"><input class="form-check-input" type="radio" name="cofundador[${count}][grupo_vulneravel]" value="${g}"><label class="form-check-label">${g}</label></div>`
                     ).join('')}
                   </div>
                 </div>

@@ -99,8 +99,7 @@ try {
         if (
             $nome === '' || $sobrenome === '' || $cpf === '' || $email === '' || $celular === '' ||
             $data_nasc === '' || $genero === '' ||
-            $formacao === '' || $etnia === '' ||
-            $orientacao_sexual === '' || $grupo_vulneravel === ''
+            $formacao === '' || $etnia === ''
         ) {
             $errors[] = 'Preencha todos os campos obrigatórios do fundador principal.';
         }
@@ -143,9 +142,6 @@ try {
 
     /**
      * COFUNDADORES
-     * REGRA:
-     * - Limpa todos os cofundadores do negócio
-     *   (ou só os novos, dependendo do modo — aqui optamos por DELETE + INSERT)
      */
     if (isset($_POST['cofundador']) && is_array($_POST['cofundador'])) {
 
@@ -195,7 +191,7 @@ try {
                 continue;
             }
 
-            // Se começou a preencher, exige tudo
+            // Se começou a preencher, exige campos obrigatórios (sem orientação/grupo)
             if ($nome === '' || $sobrenome === '' || $cpf === '' || $email === '' || $celular === '') {
                 $errors[] = "Preencha todos os campos do cofundador " . ($i + 1) . " ou remova-o.";
                 continue;
