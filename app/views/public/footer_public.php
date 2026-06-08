@@ -32,6 +32,7 @@
       <div class="col-12 col-md-4 text-center text-md-start">
         <h6 class="fw-bold mb-3" style="color:#1E3425; text-transform:uppercase; font-size:.75rem; letter-spacing:.08em;">Links Essenciais</h6>
         <ul class="list-unstyled small">
+          <li class="mb-1"><a href="/central-de-ajuda.php" target="_blank" class="footer-link">Central de Ajuda</a></li>
           <li class="mb-1"><a href="/cronograma.php" target="_blank" class="footer-link">Cronograma</a></li>
           <li class="mb-1"><a href="/regulamento-do-premio.php" target="_blank" class="footer-link">Regulamento do Prêmio</a></li>
           <li class="mb-1"><a href="/politica-de-privacidade.php" target="_blank" class="footer-link">Política de Privacidade</a></li>

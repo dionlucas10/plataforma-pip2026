@@ -784,6 +784,29 @@ include __DIR__ . '/app/views/public/header_public.php';
                     </p>
                   </div>
 
+                  <div class="cadastro-block mt-3">
+                    <div class="form-check form-check-soft">
+                        <input
+                            class="form-check-input"
+                            type="checkbox"
+                            name="aceite_termos"
+                            id="checkAceiteTermos"
+                            value="1"
+                            required
+                        >
+                        <label class="form-check-label" for="checkAceiteTermos">
+                            Li e concordo com a
+                            <a href="politica-de-posicionamento.php" target="_blank" rel="noopener noreferrer">Política de Posicionamento</a>,
+                            a <a href="politica-de-privacidade.php" target="_blank" rel="noopener noreferrer">Política de Privacidade</a>
+                            e os <a href="termos-de-uso.php" target="_blank" rel="noopener noreferrer">Termos de Uso</a>.
+                            <span class="text-danger">*</span>
+                        </label>
+                        <div class="invalid-feedback">
+                            Você precisa aceitar os termos para concluir o cadastro.
+                        </div>
+                    </div>
+                </div>
+
                   <div class="cadastro-actions cadastro-actions--final">
                     <button type="button" class="btn btn-outline-secondary btn-lg prev">Voltar</button>
                     <button type="submit" class="btn btn-success btn-lg" id="btnSubmit">Finalizar cadastro</button>

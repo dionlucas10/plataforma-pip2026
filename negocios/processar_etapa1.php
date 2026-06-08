@@ -53,8 +53,16 @@ $interesse_marketplace = $_POST['interesse_marketplace'] ?? null;
 // --------- Validações ---------
 $errors = [];
 
-if ($nome_fantasia === '' || $razao_social === '') {
-    $errors[] = "Nome do negócio e razão social são obrigatórios.";
+if ($nome_fantasia === '') {
+    $errors[] = "Nome do negócio é obrigatório.";
+}
+
+// Razão Social: obrigatória APENAS quando não for Ideação com CPF
+$cnpj_cpf_digits = strlen($cnpj_cpf);
+$ideacaoComCpf   = ($categoria === 'Ideação' && $cnpj_cpf_digits === 11);
+
+if (!$ideacaoComCpf && $razao_social === '') {
+    $errors[] = "Razão social é obrigatória.";
 }
 
 if ($categoria === '') {
@@ -74,7 +82,7 @@ if ($data_fundacao === null || $data_fundacao === '') {
     $errors[] = "Informe a data de fundação.";
 } else {
     $d = DateTime::createFromFormat('Y-m-d', $data_fundacao);
-    $hoje = new DateTime('today'); // pega a data atual do servidor
+    $hoje = new DateTime('today');
 
     if (!$d || $d->format('Y-m-d') !== $data_fundacao) {
         $errors[] = "Data de fundação inválida.";
@@ -91,13 +99,11 @@ if ($setor === '') {
 if (!preg_match('/^\d{8}$/', $cep)) {
     $errors[] = "CEP inválido. Informe 8 dígitos.";
 } else {
-    // Consulta ViaCEP para validar se existe
     $viacep = @file_get_contents("https://viacep.com.br/ws/{$cep}/json/");
     $dadosCep = json_decode($viacep, true);
     if (!is_array($dadosCep) || isset($dadosCep['erro'])) {
         $errors[] = "CEP não encontrado.";
     } else {
-        // Preenche município/estado/rua caso estejam vazios (opcional)
         if (empty($municipio)) $municipio = $dadosCep['localidade'] ?? $municipio;
         if (empty($estado)) $estado = $dadosCep['uf'] ?? $estado;
         if (empty($rua)) $rua = $dadosCep['logradouro'] ?? $rua;
@@ -113,9 +119,14 @@ if ($categoria === 'Ideação') {
             if (!isValidCPF($cnpj_cpf)) {
                 $errors[] = "CPF inválido. Verifique os dígitos.";
             }
+            // CPF em Ideação: Razão Social não é obrigatória (já tratado acima)
         } elseif (strlen($cnpj_cpf) === 14) {
             if (!isValidCNPJ($cnpj_cpf)) {
                 $errors[] = "CNPJ inválido. Verifique os dígitos.";
+            }
+            // CNPJ em Ideação: Razão Social obrigatória
+            if ($razao_social === '') {
+                $errors[] = "Razão social é obrigatória quando informar CNPJ.";
             }
         } else {
             $errors[] = "Informe CPF (11 dígitos) ou CNPJ (14 dígitos).";
@@ -132,7 +143,8 @@ if ($categoria === 'Ideação') {
         }
     }
 }
-// (Opcional) Validações adicionais de URL simples (se preenchidas)
+
+// Validações adicionais de URL simples (se preenchidas)
 $urls = ['site' => $site, 'linkedin' => $linkedin, 'instagram' => $instagram, 'facebook' => $facebook, 'tiktok' => $tiktok, 'youtube' => $youtube, 'outros_links' => $outros_links];
 foreach ($urls as $k => $u) {
     if ($u !== '' && !filter_var($u, FILTER_VALIDATE_URL)) {
@@ -204,7 +216,7 @@ try {
     switch ($categoria) {
         case 'Ideação':        $opcao = 'ideacao'; break;
         case 'Operação':       $opcao = 'operacao'; break;
-        case 'Tração/Escala':  $opcao = 'tracao'; break; // ou 'escala' se quiser separar
+        case 'Tração/Escala':  $opcao = 'tracao'; break;
         case 'Dinamizador':    $opcao = 'dinamizador'; break;
         default:               $opcao = 'nao_informado';
     }
@@ -239,23 +251,16 @@ $stmtProgresso->execute([$id]);
 $progresso = $stmtProgresso->fetch(PDO::FETCH_ASSOC);
 
 if ($modo === 'cadastro') {
-    // Fluxo normal: avança para a PRÓXIMA etapa
-    // *No processar_etapa1, a próxima é etapa2_fundadores*
     header("Location: /negocios/etapa2_fundadores.php?id=" . $id);
     exit;
 } else {
-    // Modo Edição: redireciona para a próxima etapa ou para onde parou
-
     if (!empty($progresso['inscricao_completa'])) {
-        // Já completou tudo → volta para revisão
         header("Location: /negocios/confirmacao.php?id=" . $id);
         exit;
     }
 
     $etapaParada = (int)($progresso['etapa_atual'] ?? 1);
 
-    // Se a etapa_atual ainda é 1, significa que o negócio nunca avançou
-    // (ex: importado). Avança para 2 antes de redirecionar.
     if ($etapaParada <= 1) {
         $pdo->prepare("UPDATE negocios SET etapa_atual = 2 WHERE id = ?")
             ->execute([$id]);

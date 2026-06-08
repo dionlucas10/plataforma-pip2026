@@ -25,8 +25,8 @@ $mensagem_extra = trim($_POST['mensagem_extra'] ?? '');
 $etapas_nomes = [
     1 => 'Dados do Negócio',  2 => 'Fundadores',
     3 => 'Eixo Temático',     4 => 'ODS',
-    5 => 'Financeiro',        6 => 'Impacto',
-    7 => 'Visão de Futuro',   8 => 'Apresentação',
+    5 => 'Apresentação',        6 => 'Financeiro',
+    7 => 'Impacto',   8 => 'Visão de Futuro',
     9 => 'Documentação',      10 => 'Revisão Final',
 ];
 

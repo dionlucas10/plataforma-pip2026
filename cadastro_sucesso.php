@@ -65,7 +65,7 @@ include __DIR__ . '/app/views/public/header_public.php';
                                 <p class="text-muted mb-3">
                                     Descubra iniciativas, causas e projetos publicados na plataforma.
                                 </p>
-                                <a href="/vitrine_nacional.php" class="btn btn-primary w-100">
+                                <a href="/vitrine_de_impacto.php" class="btn btn-primary w-100">
                                     Acessar vitrine
                                 </a>
                             </div>

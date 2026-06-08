@@ -372,7 +372,7 @@ include __DIR__ . '/../app/views/admin/header.php';
     </a>
 
     <?php if (can_see_admin_shortcuts()): ?>
-      <a href="/admin/recalcular_score.php?id=<?= $nid ?>"
+      <a href="/admin/recalcular_scores.php?id=<?= $nid ?>"
          class="neg-acao-btn btn-recalc"
          title="Recalcular score deste negócio">
         <i class="bi bi-arrow-repeat"></i> Recalcular Score

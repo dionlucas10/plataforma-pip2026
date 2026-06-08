@@ -792,7 +792,7 @@ if ($dadosVot) {
                     <?php endif; ?>
 
                     <!-- GALERIA DE FOTOS -->
-
+                    <?php if (!empty($galeria) && is_array($galeria)) : ?>
                     <section class="negocio-galeria-fotos">
                         <div class="negocio-galeria-topo">
                             <h3 class="fw-bold mb-0">Galeria de Fotos</h3>
@@ -826,6 +826,7 @@ if ($dadosVot) {
                             </div>
                         </div>
                     </section>
+                    <?php endif; ?>
 
                     <!-- PRÓXIMOS PASSOS -->
 
