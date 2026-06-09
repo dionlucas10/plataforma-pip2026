@@ -493,4 +493,187 @@ include __DIR__ . '/app/views/public/header_public.php';
 </section> -->
 <!-- ════ FIM: CTA FINAL ════ -->
 
+<!-- ════════════════════════════════════════════════
+     POPUP — PIP Insights
+     Aparece automaticamente ao entrar na home.
+     Fecha ao clicar no X, no botão ou fora do modal.
+     sessionStorage impede reexibição na mesma sessão.
+════════════════════════════════════════════════ -->
+<div id="pip-insights-popup" role="dialog" aria-modal="true" aria-labelledby="pip-insights-title" style="display:none;">
+  <div class="pip-popup-backdrop" id="pip-popup-backdrop"></div>
+  <div class="pip-popup-box">
+
+    <button class="pip-popup-close" id="pip-popup-close" aria-label="Fechar popup">
+      <i class="bi bi-x-lg"></i>
+    </button>
+
+    <a href="https://blog.impactospositivos.com/pip-insights-como-ser-referencia-para-as-pessoas-proximas/"
+       target="_blank"
+       rel="noopener noreferrer"
+       class="pip-popup-link"
+       aria-label="Leia o artigo: PIP Insights — Como ser referência para as pessoas próximas?">
+      <img
+        src="/assets/images/insights-09-jun.jfif"
+        alt="PIP Insights — Como ser referência para as pessoas próximas?"
+        class="pip-popup-img"
+        width="600"
+        height="400"
+        loading="eager"
+      >
+    </a>
+
+    <div class="pip-popup-footer">
+      <p id="pip-insights-title" class="pip-popup-label">PIP Insights</p>
+      <a href="https://blog.impactospositivos.com/pip-insights-como-ser-referencia-para-as-pessoas-proximas/"
+         target="_blank"
+         rel="noopener noreferrer"
+         class="pip-popup-btn">
+        Como ser referência para as pessoas próximas? <i class="bi bi-arrow-right ms-1"></i>
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<style>
+/* ── Popup PIP Insights ── */
+#pip-insights-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+#pip-insights-popup.pip-hidden { display: none !important; }
+
+.pip-popup-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.60);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  cursor: pointer;
+}
+
+.pip-popup-box {
+  position: relative;
+  z-index: 1;
+  background: #fff;
+  border-radius: 12px;
+  max-width: 520px;
+  width: 100%;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+  animation: pipFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes pipFadeIn {
+  from { opacity: 0; transform: scale(0.92) translateY(16px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.pip-popup-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.18s;
+}
+.pip-popup-close:hover { background: rgba(0,0,0,0.80); }
+
+.pip-popup-link { display: block; line-height: 0; }
+
+.pip-popup-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  transition: opacity 0.2s;
+}
+.pip-popup-link:hover .pip-popup-img { opacity: 0.92; }
+
+.pip-popup-footer {
+  padding: 1rem 1.25rem 1.25rem;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pip-popup-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #01696f;
+  margin: 0;
+}
+
+.pip-popup-btn {
+  display: inline-flex;
+  align-items: center;
+  background: #01696f;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.55rem 1.1rem;
+  border-radius: 6px;
+  text-decoration: none;
+  align-self: flex-start;
+  transition: background 0.18s;
+}
+.pip-popup-btn:hover { background: #0c4e54; color: #fff; }
+
+@media (max-width: 480px) {
+  .pip-popup-box { border-radius: 10px; }
+  .pip-popup-footer { padding: 0.875rem 1rem 1rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pip-popup-box { animation: none; }
+}
+</style>
+
+<script>
+(function () {
+  var STORAGE_KEY = 'pip_insights_popup_seen';
+  var popup       = document.getElementById('pip-insights-popup');
+  var closeBtn    = document.getElementById('pip-popup-close');
+  var backdrop    = document.getElementById('pip-popup-backdrop');
+
+  function closePopup() {
+    popup.classList.add('pip-hidden');
+    try { sessionStorage.setItem(STORAGE_KEY, '1'); } catch(e) {}
+  }
+
+  // Exibe se ainda não foi fechado nesta sessão
+  var seen = false;
+  try { seen = !!sessionStorage.getItem(STORAGE_KEY); } catch(e) {}
+
+  if (!seen) {
+    popup.classList.remove('pip-hidden');
+  }
+
+  closeBtn.addEventListener('click', closePopup);
+  backdrop.addEventListener('click', closePopup);
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closePopup();
+  });
+})();
+</script>
+
 <?php include __DIR__ . '/app/views/public/footer_public.php'; ?>
