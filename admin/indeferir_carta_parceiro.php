@@ -2,7 +2,7 @@
 // ============================================================
 // admin/indeferir_carta_parceiro.php
 // Cancela a assinatura da carta/acordo do parceiro, permitindo
-// nova edição e nova assinatura
+// nova edição e nova assinatura. Notifica o parceiro por e-mail.
 // ============================================================
 declare(strict_types=1);
 session_start();
@@ -12,6 +12,9 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 require_once __DIR__ . '/../app/helpers/auth.php';
+require_once __DIR__ . '/../app/helpers/mail.php';
+require_once __DIR__ . '/../app/helpers/render.php';
+
 require_admin_login();
 
 // Apenas superadmin
@@ -42,7 +45,7 @@ if ($id <= 0) {
 }
 
 $sql = "
-    SELECT 
+    SELECT
         p.id,
         p.razao_social,
         p.nome_fantasia,
@@ -107,9 +110,91 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmar_indeferimen
 
         $pdo->commit();
 
-        $_SESSION['msg_sucesso'] = 'Carta/acordo indeferido com sucesso. O parceiro poderá editar os dados e assinar novamente.';
+        // ----- Envio de e-mail ao parceiro -----
+        $emailDestino      = $parceiro['email_login'] ?? '';
+        $nome_parceiro     = $parceiro['nome_fantasia'] ?: $parceiro['razao_social'] ?: 'Parceiro';
+        $nome_organizacao  = $parceiro['razao_social'] ?: $parceiro['nome_fantasia'] ?: 'sua organização';
+
+        if (!empty($emailDestino)) {
+            $link_painel = get_base_url() . '/parceiros/carta-acordo.php';
+
+            // Bloco com o motivo (se informado)
+            $bloco_motivo = '';
+            if (!empty($motivo)) {
+                $motivo_escaped = nl2br(htmlspecialchars($motivo));
+                $bloco_motivo = "
+                    <div style='background-color:#fff8e1;border-left:4px solid #ffc107;padding:15px;margin:20px 0;border-radius:4px;'>
+                        <strong>Motivo informado pela equipe:</strong><br>
+                        <span style='color:#555;'>{$motivo_escaped}</span>
+                    </div>
+                ";
+            }
+
+            $subject = 'Carta/Acordo – Indeferimento e solicitação de revisão';
+
+            $bodyHtml = "
+                <div style='font-family:Arial,sans-serif;color:#333;line-height:1.6;max-width:600px;margin:0 auto;border:1px solid #eaeaea;border-radius:8px;padding:30px;background-color:#ffffff;'>
+
+                    <div style='text-align:center;margin-bottom:25px;'>
+                        <h2 style='color:#dc3545;margin:10px 0 0 0;'>Carta/Acordo Indeferida</h2>
+                    </div>
+
+                    <p style='font-size:16px;'>Olá, <strong>{$nome_parceiro}</strong>,</p>
+
+                    <p>A equipe da <strong>Plataforma Impactos Positivos</strong> analisou a carta/acordo de parceria de <strong>{$nome_organizacao}</strong> e identificou a necessidade de revisão antes de prosseguirmos.</p>
+
+                    <div style='background-color:#fff3f3;border-left:4px solid #dc3545;padding:15px;margin:25px 0;border-radius:4px;'>
+                        <p style='margin:0 0 6px 0;'><strong>O que isso significa?</strong></p>
+                        <ul style='margin:0;padding-left:18px;color:#555;'>
+                            <li style='margin-bottom:8px;'>⚠️ <strong>A assinatura atual foi cancelada.</strong></li>
+                            <li style='margin-bottom:8px;'>📝 Você pode <strong>editar os dados da carta</strong> e realizar uma nova assinatura.</li>
+                            <li style='margin-bottom:8px;'>✅ Após a nova assinatura, a carta será analisada novamente pela equipe.</li>
+                        </ul>
+                    </div>
+
+                    {$bloco_motivo}
+
+                    <p>Acesse o painel do parceiro para revisar e assinar novamente a carta/acordo:</p>
+
+                    <p style='text-align:center;margin:35px 0;'>
+                        <a href='{$link_painel}' style='background-color:#1D4F3A;color:#ffffff;padding:14px 30px;text-decoration:none;border-radius:5px;font-weight:bold;font-size:16px;display:inline-block;'>
+                            Acessar Carta/Acordo
+                        </a>
+                    </p>
+
+                    <div style='background-color:#f0f4ed;border-left:4px solid #CDDE00;padding:15px;margin:20px 0;border-radius:4px;'>
+                        <p style='margin:0;font-size:15px;color:#3a5a40;'>
+                            Em caso de dúvidas, entre em contato com a equipe. Estamos à disposição para ajudar!
+                        </p>
+                    </div>
+
+                    <hr style='border:none;border-top:1px solid #eee;margin:30px 0;'>
+                    <p style='color:#666;font-size:14px;margin-bottom:5px;'>Atenciosamente,</p>
+                    <p style='color:#666;font-size:14px;margin-top:0;'><strong>Equipe Impactos Positivos</strong></p>
+
+                </div>
+            ";
+
+            $email_renderizado = render_email_from_db($subject, $bodyHtml);
+
+            $headers  = "MIME-Version: 1.0\r\n";
+            $headers .= "Content-type: text/html; charset=utf-8\r\n";
+            $headers .= "From: Plataforma Impactos Positivos <nao-responda@impactospositivos.com>\r\n";
+
+            send_mail(
+                $emailDestino,
+                $nome_parceiro,
+                $email_renderizado['subject'],
+                $email_renderizado['bodyHtml'],
+                $headers
+            );
+        }
+        // ----- Fim envio de e-mail -----
+
+        $_SESSION['msg_sucesso'] = 'Carta/acordo indeferida com sucesso. O parceiro foi notificado por e-mail e poderá editar os dados e assinar novamente.';
         header('Location: visualizar_parceiro.php?id=' . $id);
         exit;
+
     } catch (Throwable $e) {
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
@@ -157,6 +242,7 @@ include __DIR__ . '/../app/views/admin/header.php';
                 <i class="bi bi-info-circle-fill fs-5 mt-1"></i>
                 <div>
                     Esta ação <strong>cancela a assinatura atual</strong> e libera o parceiro para editar os dados e realizar uma nova assinatura.
+                    O parceiro <strong>será notificado por e-mail</strong> automaticamente.
                 </div>
             </div>
 
@@ -174,7 +260,7 @@ include __DIR__ . '/../app/views/admin/header.php';
                     <span class="fw-semibold"><?= htmlspecialchars((string) ($parceiro['nome_fantasia'] ?? '-')) ?></span>
                 </div>
                 <div class="col-md-6 mb-2">
-                    <small class="text-muted d-block">E-mail de Login</small>
+                    <small class="text-muted d-block">E-mail do Parceiro</small>
                     <span class="fw-semibold"><?= htmlspecialchars((string) ($parceiro['email_login'] ?? '-')) ?></span>
                 </div>
                 <div class="col-md-3 mb-2">
@@ -213,13 +299,16 @@ include __DIR__ . '/../app/views/admin/header.php';
                 <div class="mb-4">
                     <label for="motivo" class="form-label fw-semibold">Motivo do indeferimento</label>
                     <textarea name="motivo" id="motivo" class="form-control" rows="4"
-                        placeholder="Descreva o motivo para registro interno ou para futura comunicação."></textarea>
-                    <div class="form-text">Campo opcional, mas recomendado para fins de auditoria.</div>
+                        placeholder="Descreva o motivo. Este texto será incluído no e-mail enviado ao parceiro."></textarea>
+                    <div class="form-text">
+                        <i class="bi bi-envelope me-1"></i>
+                        Campo opcional, mas recomendado — o conteúdo será exibido no e-mail de notificação enviado ao parceiro.
+                    </div>
                 </div>
 
                 <div class="d-flex gap-2 flex-wrap">
                     <button type="submit" class="btn btn-warning">
-                        <i class="bi bi-file-earmark-x"></i> Confirmar Indeferimento
+                        <i class="bi bi-file-earmark-x"></i> Confirmar Indeferimento e Notificar Parceiro
                     </button>
                     <a href="visualizar_parceiro.php?id=<?= (int) $parceiro['id'] ?>" class="btn btn-outline-secondary">
                         <i class="bi bi-x-circle"></i> Cancelar
