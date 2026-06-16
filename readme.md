@@ -1,4 +1,4 @@
-# Plataforma Impactos Positivos
+# Plataforma Impactos Positivos dssdfsd
 
 Plataforma web para gestão de empreendedores de impacto social, negócios, parceiros e curadoria de uma vitrine pública. Desenvolvida em PHP com MySQL, Bootstrap 5 e PHPMailer.
 
